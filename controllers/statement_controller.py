@@ -86,16 +86,8 @@ class StatementController():
                     self.statement.append_items_set(taxes_items_set)
 
             if any(x in line.upper() for x in getattr(self,'CARD_TOTAL')):
-
                 #Set Card Value for ItemSet
-                if entity == 'VISA':
-                    last_four_numbers = int([x for x in self.list_splitted_item if self.is_number(x)][0])
-                    items_set.card = Card(entity=entity,bank=bank,last_four_numbers=last_four_numbers)
-                
-                elif entity == 'MASTERCARD':
-                    items_set = Card(entity=entity,bank=bank) 
-                
-                #Append ItemSet
+                items_set.card = Card(entity=entity,bank=bank,last_four_numbers=self.extract_last_four_numbers()) if entity == 'VISA' else Card(entity=entity,bank=bank) if entity == 'MASTERCARD' else None
                 self.statement.append_items_set(items_set)
                 items_set = ItemsSet(items=[])
             
@@ -103,31 +95,21 @@ class StatementController():
                 self.is_valid_line(line) and 
                 not self.is_multi_date_line()):
                 
-                #Mastercad taxes flag
                 taxes_got = True
-                #Date
                 date = self.extract_date()
-                #Quote
                 quote = self.extract_quote()
-                #Receipt
                 receipt = self.exctract_receipt(entity=entity)
-                #ARS Amount
                 ars_amount = self.extract_ars_amount()
-                #Concept
                 concept = self.extract_concept()
 
                 if not self.is_tax(concept):
                     item = Item(date=date,concept=concept,ars_amount=ars_amount,receipt=receipt,type='buy')
                     item.set_quotes_values_from_string(quote)
-                    #Append to list in dict
-                    items_set.append_item(item)
                 else:
-                    #Ars Amount
                     ars_amount = ars_amount if concept not in getattr(self,'IVA') and entity == 'VISA' else round(ars_amount * getattr(self,'IVA_VALUE'),2)
-                    #Item instance creation
                     item = Item(date=date,concept=concept,ars_amount=ars_amount,type='taxes')
-                    #Append to list
-                    items_set.append_item(item)
+                
+                items_set.append_item(item)
                     
         #Append Taxes Items Set
         if entity == 'VISA':
@@ -136,8 +118,7 @@ class StatementController():
     
     def extract_date(self):
         for regex in getattr(self,'DATE_REGEX'):
-            r = re.compile(regex)
-            date = list(filter(r.match, self.list_splitted_item))
+            date = list(filter(re.compile(regex).match, self.list_splitted_item))
             if len(date) > 0:
                 self.list_splitted_item.remove(date[0])
                 return date[0]
@@ -151,6 +132,9 @@ class StatementController():
             except:
                 continue
         return True
+
+    def extract_last_four_numbers(self):
+        return int([x for x in self.list_splitted_item if self.is_number(x)][0])
 
     def extract_quote(self):
         r = re.compile(getattr(self,'QUOTE_REGEX'))
@@ -182,8 +166,6 @@ class StatementController():
         if len(receipts) > 0:
             self.list_splitted_item.remove(receipts[0]) if receipts[0] in self.list_splitted_item else None
             return receipts[0]
-        else:
-            return None       
     
     def extract_ars_amount(self):
         for element in self.list_splitted_item[::-1]:
@@ -197,27 +179,16 @@ class StatementController():
 
     def is_tax(self,concept=None):
         if concept is None: concept = self.list_splitted_item[0] if len(self.list_splitted_item) > 1 else False
-        elif not concept: return False
-
+        if not concept: return False
+        
         for tax in getattr(self,'IMPUESTOS') + getattr(self,'IVA') + getattr(self,'INTERESES_FINANCIACION'):
-            for word in list(filter(lambda x: len(x) > 0, concept.upper().split(' '))):
-                if tax.upper() in word.upper(): return True
-        return False
+            return any(tax.upper() in word.upper() for word in list(filter(lambda x: len(x) > 0, concept.upper().split(' '))))
 
     def is_valid_line(self,line):
-        for invalid_line in getattr(self,'INVALID_LINES'):
-            if invalid_line in line:
-                return False
-        return True
+        return not any(invalid_line in line for invalid_line in getattr(self,'INVALID_LINES'))
 
     def is_multi_date_line(self):
-        matches = 0
-        for regex in getattr(self,'DATE_REGEX'):
-            for el in self.list_splitted_item:
-                if re.match(regex,el):
-                    matches +=1
-                    if matches > 1: return True
-        return False
+        return True if len([el for regex in getattr(self,'DATE_REGEX') for el in self.list_splitted_item if re.match(regex,el)]) > 1 else False
 
     def multi_regex_match(self,attr):
         value = self.list_splitted_item[0] if len(self.list_splitted_item) > 1 else ''
