@@ -16,10 +16,10 @@ class ItemsSet:
     def __str__(self) -> str:
         return f"""
             Item Set
-                Items: {str(len(self._items)) + " Items"}
-                Card: {self._card}
+                Items: {str(len(self.items)) + " Items"}
+                Card: {'Credit Card'}
                 Total Amount ARS: {self.calc_total_amount_ars()}
-                Type: {self._type}
+                Type: {self.type}
             """  
 
     #Getters

@@ -188,7 +188,6 @@ class StatementController():
         value = self.list_splitted_item[0] if len(self.list_splitted_item) > 1 else ''
         if not any(re.match(regex,value) for regex in getattr(self,attr)):
             value = '-'.join(self.list_splitted_item[0:3]) if len(self.list_splitted_item) > 2 else ''
-            print(value)
             return True if any(re.match(regex,value) for regex in getattr(self,attr)) else False
         return True
 
