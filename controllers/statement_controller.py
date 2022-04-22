@@ -74,12 +74,11 @@ class StatementController():
             if entity == 'MASTERCARD' and not taxes_got:
                 taxes_items_set = ItemsSet(items=[])
 
-                if self.is_tax():
-                    if not self.filter_tax_by_amount():
-                        ars_amount = self.extract_ars_amount()
-                        concept = self.extract_concept()
-                        item = Item(concept=concept,ars_amount=ars_amount,type='taxes')
-                        taxes_items_set.append_item(item)
+                if self.is_tax() and not self.filter_tax_by_amount():
+                    ars_amount = self.extract_ars_amount()
+                    concept = self.extract_concept()
+                    item = Item(concept=concept,ars_amount=ars_amount,type='taxes')
+                    taxes_items_set.append_item(item)
 
                 if len(taxes_items_set.items) > 0:
                     taxes_items_set.type = 'taxes'
@@ -117,12 +116,13 @@ class StatementController():
             self.statement.append_items_set(items_set)
     
     def extract_date(self):
-        for regex in getattr(self,'DATE_REGEX'):
-            date = list(filter(re.compile(regex).match, self.list_splitted_item))
-            if len(date) > 0:
-                self.list_splitted_item.remove(date[0])
-                return date[0]
-
+        try:
+            dates = [list(filter(re.compile(regex).match, self.list_splitted_item))[0] for regex in getattr(self,'DATE_REGEX') if list(filter(re.compile(regex).match, self.list_splitted_item)) != []]
+            self.list_splitted_item.remove(dates[0])    
+            return dates[0]
+        except:
+            return None
+        
     def filter_tax_by_amount(self):
         for word in self.list_splitted_item:
             try:
@@ -140,20 +140,14 @@ class StatementController():
         r = re.compile(getattr(self,'QUOTE_REGEX'))
         quote = list(filter(r.search, self.list_splitted_item))
         
-        quote_prefixs = []
-        for word in getattr(self,'QUOTE_PREFIX'):
-            quote_prefixs += [x for x in self.list_splitted_item if word in x.upper() and not re.search(getattr(self,'QUOTE_REGEX'),x)]
-        
-        if len(quote_prefixs) > 0:
-            [self.list_splitted_item.remove(x) for x in quote_prefixs]
+        quote_prefixs = [x for word in getattr(self,'QUOTE_PREFIX') for x in self.list_splitted_item if word in x.upper() and not re.search(getattr(self,'QUOTE_REGEX'),x)]
+        [self.list_splitted_item.remove(x) for x in quote_prefixs]
 
         if len(quote) > 0:
-            quote_ = quote[0]
-            for prefix in getattr(self,'QUOTE_PREFIX'):
-                if prefix in quote[0]:
-                    quote_ = quote[0].upper().replace(prefix,'')
             self.list_splitted_item.remove(quote[0])
-            return quote_
+            prefixes = [prefix for prefix in getattr(self,'QUOTE_PREFIX') if prefix in quote[0]]
+            for prefix in prefixes: quote[0] = quote[0].upper().replace(prefix,'')
+            return quote[0]
         else:
             return '01/01'
 
@@ -192,11 +186,11 @@ class StatementController():
 
     def multi_regex_match(self,attr):
         value = self.list_splitted_item[0] if len(self.list_splitted_item) > 1 else ''
-        for regex in getattr(self,attr):
-            if re.match(regex,value):
-                return True
-        return False
-
+        if not any(re.match(regex,value) for regex in getattr(self,attr)):
+            value = '-'.join(self.list_splitted_item[0:3]) if len(self.list_splitted_item) > 2 else ''
+            print(value)
+            return True if any(re.match(regex,value) for regex in getattr(self,attr)) else False
+        return True
 
     @staticmethod
     def is_number(value):
