@@ -99,8 +99,8 @@ class Item:
         self._current_quota = current_quota
 
     @current_quota.setter
-    def type(self,type):
-        self._type = type
+    def current_quota(self,current_quota):
+        self._current_quota = current_quota
     
     #Methods
     def set_quotes_values_from_string(self,value,quote_prefix=''):

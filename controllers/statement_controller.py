@@ -1,6 +1,7 @@
 """
    IMPORTS
 """
+from os import remove
 import re
 import pdfplumber
 from classes.Item import Item
@@ -90,12 +91,12 @@ class StatementController():
                 self.statement.append_items_set(items_set)
                 items_set = ItemsSet(items=[])
             
-            if (self.multi_regex_match('DATE_REGEX') and 
+            date = self.multi_regex_match('DATE_REGEX')
+            if (date!= False and 
                 self.is_valid_line(line) and 
                 not self.is_multi_date_line()):
                 
                 taxes_got = True
-                date = self.extract_date()
                 quote = self.extract_quote()
                 receipt = self.exctract_receipt(entity=entity)
                 ars_amount = self.extract_ars_amount()
@@ -152,14 +153,15 @@ class StatementController():
             return '01/01'
 
     def exctract_receipt(self,entity):
-        if entity == 'VISA':
-            receipts = [x for x in self.list_splitted_item if x.endswith('*')]
-        elif entity == 'MASTERCARD':
-            receipts = [x for x in self.list_splitted_item if x.isdigit()]
-            
+        receipts = [x for x in self.list_splitted_item if x.endswith('*')]
+        if len(receipts) < 1 or not receipts[0].replace('*','').isdigit():
+            receipts = [x for x in self.list_splitted_item if x.isdigit()]      
+        
+        if '*' in self.list_splitted_item: self.list_splitted_item.remove('*')
+        
         if len(receipts) > 0:
             self.list_splitted_item.remove(receipts[0]) if receipts[0] in self.list_splitted_item else None
-            return receipts[0]
+            return receipts[0].replace('*','')
     
     def extract_ars_amount(self):
         for element in self.list_splitted_item[::-1]:
@@ -175,8 +177,11 @@ class StatementController():
         if concept is None: concept = self.list_splitted_item[0] if len(self.list_splitted_item) > 1 else False
         if not concept: return False
         
-        for tax in getattr(self,'IMPUESTOS') + getattr(self,'IVA') + getattr(self,'INTERESES_FINANCIACION'):
-            return any(tax.upper() in word.upper() for word in list(filter(lambda x: len(x) > 0, concept.upper().split(' '))))
+        taxes = getattr(self,'IMPUESTOS') + getattr(self,'IVA') + getattr(self,'INTERESES_FINANCIACION')
+        for tax in taxes:
+            if any(tax in word.upper() for word in list(filter(lambda x: len(x) > 0, concept.upper().split(' ')))): return True
+        return False
+
 
     def is_valid_line(self,line):
         return not any(invalid_line in line for invalid_line in getattr(self,'INVALID_LINES'))
@@ -188,8 +193,10 @@ class StatementController():
         value = self.list_splitted_item[0] if len(self.list_splitted_item) > 1 else ''
         if not any(re.match(regex,value) for regex in getattr(self,attr)):
             value = '-'.join(self.list_splitted_item[0:3]) if len(self.list_splitted_item) > 2 else ''
-            return True if any(re.match(regex,value) for regex in getattr(self,attr)) else False
-        return True
+            for ele in self.list_splitted_item[0:3]: self.list_splitted_item.remove(ele)
+            return value if any(re.match(regex,value) for regex in getattr(self,attr)) else False
+        else:
+            return self.extract_date()
 
     @staticmethod
     def is_number(value):

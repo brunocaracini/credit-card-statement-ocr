@@ -16,7 +16,7 @@ class ItemsSet:
     def __str__(self) -> str:
         return f"""
             Item Set
-                Items: {str(len(self.items)) + " Items"}
+                Items: {str(self.get_items_count()) + " Items"}
                 Card: {'Credit Card'}
                 Total Amount ARS: {self.calc_total_amount_ars()}
                 Type: {self.type}
@@ -60,4 +60,11 @@ class ItemsSet:
     #Calculations
     def calc_total_amount_ars(self,ret=False):
         return round(sum([item.ars_amount for item in self.items]),2)
+
+    def get_items_count(self):
+        return len(self.items)
         
+    #Prints
+    def print_all_items(self):
+        for item in self.items: print(item)
+    

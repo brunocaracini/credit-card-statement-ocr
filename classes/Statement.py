@@ -39,4 +39,12 @@ class Statement:
             
     def calc_total_amount_buys_ars(self):
         return round(sum([item_set.calc_total_amount_ars() for item_set in self.items_sets if item_set.type == 'buy']),2)
+
+    #Prints
+    def print_all_items(self):
+        for item_set in self.items_sets: item_set.print_all_items()
+    
+    def print_all_item_sets(self):
+        for item_set in self.items_sets: print(item_set)
+
             
