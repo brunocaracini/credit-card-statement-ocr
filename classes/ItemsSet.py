@@ -2,6 +2,9 @@
    IMPORTS
 """
 
+from ast import iter_child_nodes
+
+
 class ItemsSet:
     """
        Class thar repsents a set of items of the credit card statement
@@ -63,6 +66,14 @@ class ItemsSet:
 
     def get_items_count(self):
         return len(self.items)
+
+    def get_next_statement_quotes_items(self):
+        quotes_item_set = self
+        quotes_item_set.items = list(filter(lambda x: x.type != 'taxes' and x.current_quota < x.total_quotes,quotes_item_set.items))
+        return quotes_item_set
+
+    def count_quotes_buys(self):
+        return len([item for item in self.items if item.type == 'buy' and item.total_quotes is not None and item.total_quotes > 1])
         
     #Prints
     def print_all_items(self):

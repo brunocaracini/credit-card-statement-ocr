@@ -1,5 +1,5 @@
 from controllers.statement_controller import StatementController
 
 sc = StatementController()
-sc.statement_orc_scanner_visa('Visa ICBC Resumen 202202.pdf',entity='VISA')
-sc.statement.print_all_items()
+s = sc.get_last().calc_total_amount_ars()
+print(s.ars_total_amount)

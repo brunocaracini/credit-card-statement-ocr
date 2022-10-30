@@ -3,7 +3,7 @@
 """
 from types import TracebackType
 
-class Statement:
+class Statement():
     """
        Class thar repsents a credit card statement
     """
@@ -40,6 +40,30 @@ class Statement:
     def calc_total_amount_buys_ars(self):
         return round(sum([item_set.calc_total_amount_ars() for item_set in self.items_sets if item_set.type == 'buy']),2)
 
+    def calc_next_statement_total_quotes(self):
+        return round(sum([item_set.calc_total_amount_ars() for item_set in self.get_next_statement_quotes_item_sets() if item_set.type == 'buy']),2)
+
+    def calc_next_statement_total_quotes_per_card(self):
+        return [item_set.calc_total_amount_ars() for item_set in self.get_next_statement_quotes_item_sets() if item_set.type == 'buy']
+
+    def set_calcs(self):
+        self.ars_total_amount = self.calc_total_amount_ars()
+
+    #Counts
+    def count_total_buys(self):
+        return len([item for item_set in self.items_sets for item in item_set.items if item_set.type == 'buy'])
+
+    def count_total_cards(self):
+        return len([item_set for item_set in self.items_sets if item_set.type == 'buy'])
+    
+    def count_quotes_buys(self):
+        return sum([item_set.count_quotes_buys() for item_set in self.items_sets])
+        
+
+    #Filterings
+    def get_next_statement_quotes_item_sets(self):
+        return [item_set.get_next_statement_quotes_items() for item_set in self.items_sets if item_set.type == 'buy']
+
     #Prints
     def print_all_items(self):
         for item_set in self.items_sets: item_set.print_all_items()
@@ -47,4 +71,8 @@ class Statement:
     def print_all_item_sets(self):
         for item_set in self.items_sets: print(item_set)
 
-            
+    def print_next_statement_quotes_all_item_sets(self):
+        for item_set in self.get_next_statement_quotes_item_sets(): print(item_set)
+
+    def print_next_statement_quotes_all_items(self):
+        for item_set in self.get_next_statement_quotes_item_sets(): item_set.print_all_items()

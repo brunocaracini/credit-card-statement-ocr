@@ -1,4 +1,5 @@
 from flask import Flask, render_template
+from controllers.statement_controller import StatementController
 
 #app creation
 app = Flask(__name__)
@@ -7,7 +8,9 @@ app.secret_key = 'SecretKeyForSigningCookies'
 #Test UI
 @app.route('/index', methods=['GET'])
 def main():
-    return render_template('index.html')
+    sc = StatementController()
+    statement = sc.get_last()
+    return render_template('index.html', statement = statement)
 
 @app.route('/forms', methods=['GET'])
 def forms():
