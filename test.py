@@ -1,9 +1,8 @@
-import regex
-import dateutil.parser as dparser
-from classes.Item import Item
-import datefinder
+from data.data import Data
 
-a = [',']
-print(a.index('*'))
+d = Data()
+d.openConn()
 
-
+res = d.cursor.execute('Select * from credit_card_statements')
+res = d.cursor.fetchall()
+print(res)

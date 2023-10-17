@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for, request
 from controllers.statement_controller import StatementController
 
 #app creation
@@ -6,11 +6,23 @@ app = Flask(__name__)
 app.secret_key = 'SecretKeyForSigningCookies'
 
 #Test UI
-@app.route('/index', methods=['GET'])
+@app.route('/index')
 def main():
     sc = StatementController()
-    statement = sc.get_last()
-    return render_template('index.html', statement = statement)
+    statements = sc.get_latests(id_user=1)
+    return render_template('index.html', statement = statements[0])
+
+@app.route('/creditcard/<id_user>/<id_statement>')
+def credit_cards(id_user, id_statement):
+    return redirect(url_for(endpoint='credit_card', id_user=id_user, id_statement=id_statement))
+
+@app.route('/creditcard')
+def credit_card():
+    sc = StatementController()
+    statements = sc.get_latests(
+        id_user=request.args.get('id_user')
+    )
+    return render_template('credit-cards.html', statement = statements[0])
 
 @app.route('/forms', methods=['GET'])
 def forms():

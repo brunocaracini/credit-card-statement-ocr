@@ -14,6 +14,7 @@ class Item:
         self._total_quotes = total_quotes
         self._receipt = receipt
         self._type = type
+        self.porcentage_paid = round((self.current_quota - 1) * 100/self.total_quotes) if self.type != 'taxes' else None
 
     def __str__(self) -> str:
         return f"""
