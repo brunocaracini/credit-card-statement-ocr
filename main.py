@@ -1,4 +1,4 @@
-from controllers.statement_controller import StatementController
+'''from controllers.statement_controller import StatementController
 from data.data_statement import DataStatement
 sc = StatementController()
 s = sc.insert_with_ocr(
@@ -10,4 +10,8 @@ s = sc.insert_with_ocr(
     id_user=1,
     id_credit_cards=1
 )
-print(s.ars_total_amount)
+print(s.ars_total_amount)'''
+
+from data.data_card import DataCard
+
+dc = DataCard()

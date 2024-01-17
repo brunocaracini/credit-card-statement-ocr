@@ -8,7 +8,7 @@ class Statement():
        Class thar repsents a credit card statement
     """
     
-    def __init__(self,id=None,bank=None,entity=None,year=None,month=12,taxes=None,ars_total_amount=None,usd_total_amount=None,id_credit_cards=None,items_sets=[],filepath=None):
+    def __init__(self,id=None,bank=None,entity=None,year=None,month=12,taxes=None,ars_total_amount=None,usd_total_amount=None,id_credit_cards=None,items_sets=[],filepath=None,is_processed:bool=False):
         self.id = id
         self._bank = bank
         self._entity = entity
@@ -20,6 +20,7 @@ class Statement():
         self._id_credit_cards = id_credit_cards
         self._items_sets = items_sets
         self._filepath = filepath
+        self._is_processed = is_processed
         self.month_name = calendar.month_name[month]
         
     #Getters
@@ -62,6 +63,10 @@ class Statement():
     @property
     def filepath(self):
         return self._filepath
+    
+    @property
+    def is_processed(self):
+        return self.is_processed
 
     #Setters
     @bank.setter
@@ -103,6 +108,10 @@ class Statement():
     @filepath.setter
     def filepath(self, value):
         self._filepath = value
+
+    @is_processed.setter
+    def is_processed(self, value):
+        self._is_processed = value
 
     #Appends
     def append_items_set(self,item_set):

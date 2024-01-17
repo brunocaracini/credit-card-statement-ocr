@@ -18,7 +18,7 @@ class DataStatement(Data):
     ]
 
     FOREIGN_KEYS = [
-        'id_user'
+        'id_user',
     ]
 
     def __init__(self):
