@@ -1,6 +1,6 @@
 from data.data import Data
 from classes.Statement import Statement
-from libraries.orc_engine import OcrEngine
+from libraries.ocr_engine import OcrEngine
 
 class DataStatement(Data):
 

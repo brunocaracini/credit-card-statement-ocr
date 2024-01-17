@@ -37,6 +37,6 @@ class DataItemSet(Data):
         return super().insert(self.TABLE_NAME, columns, values)
     
     def insert_many(self, items_sets: list[ItemsSet], id_credit_card_statement: int):
-        values = [[getattr(item_set, col) for col in self.COLUMNS if getattr(item_set, col)] + [id_credit_card_statement] for item_set in items_sets]
+        values = [[getattr(item_set, col) for col in self.COLUMNS if getattr(item_set, col)] + [id_credit_card_statement] for item_set in items_sets if len(item_set.items) > 0]
         columns = [col for col in self.COLUMNS if getattr(items_sets[0], col)] + self.FOREIGN_KEYS
         return super().insert(self.TABLE_NAME, columns, values)

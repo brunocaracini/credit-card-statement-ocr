@@ -8,7 +8,7 @@ class Statement():
        Class thar repsents a credit card statement
     """
     
-    def __init__(self,id=None,bank=None,entity=None,year=None,month=None,taxes=None,ars_total_amount=None,usd_total_amount=None,id_credit_cards=None,items_sets=[],filepath=None):
+    def __init__(self,id=None,bank=None,entity=None,year=None,month=12,taxes=None,ars_total_amount=None,usd_total_amount=None,id_credit_cards=None,items_sets=[],filepath=None):
         self.id = id
         self._bank = bank
         self._entity = entity
@@ -21,7 +21,7 @@ class Statement():
         self._items_sets = items_sets
         self._filepath = filepath
         self.month_name = calendar.month_name[month]
-
+        
     #Getters
     @property       
     def bank(self):
@@ -129,7 +129,7 @@ class Statement():
 
     def set_calcs(self):
         for item_set in self.items_sets:
-            item_set.total_ars_amount = self.calc_total_amount_ars()
+            item_set.total_ars_amount = item_set.calc_total_amount_ars()
         self.ars_total_amount = self.calc_total_amount_ars()
         self.taxes = self.calc_total_amount_taxes_ars()
 
@@ -146,6 +146,10 @@ class Statement():
     #Filterings
     def get_next_statement_quotes_item_sets(self):
         return [item_set.get_next_statement_quotes_items() for item_set in self.items_sets if item_set.type == 'buy']
+    
+    #Updates
+    def remove_empty_item_sets(self):
+        self.items_sets = [item_set for item_set in self.items_sets if len(item_set.items) > 0]
 
     #Prints
     def print_all_items(self):
