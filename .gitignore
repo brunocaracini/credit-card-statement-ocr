@@ -1,15 +1,5 @@
-/Mter Fces Resumen 202202.pdf
-/Mter ICBC Resumen 202202.pdf
-/Resumen de tarjeta de crédito VISA-04-04-2022.pdf
 /test.py
-/Visa ICBC Resumen 202202.pdf
-/Visa ICBC Resumen 202203.pdf
 /__pycache__
-.pyc
-classes/__pycache__/__init__.cpython-312.pyc
-classes/__pycache__/Card.cpython-312.pyc
-classes/__pycache__/Item.cpython-312.pyc
-classes/__pycache__/ItemsSet.cpython-312.pyc
 *.pyc
 *.pdf
 *.xlsx
