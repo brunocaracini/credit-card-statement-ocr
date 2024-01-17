@@ -10,3 +10,6 @@ classes/__pycache__/__init__.cpython-312.pyc
 classes/__pycache__/Card.cpython-312.pyc
 classes/__pycache__/Item.cpython-312.pyc
 classes/__pycache__/ItemsSet.cpython-312.pyc
+*.pyc
+*.pdf
+*.xlsx
