@@ -20,6 +20,7 @@ class ItemsSet:
     def __str__(self) -> str:
         return f"""
             Item Set
+                ID: {self.id}
                 Items: {str(self.get_items_count()) + " Items"}
                 Card: {'Credit Card'}
                 Total Amount ARS: {self.calc_total_amount_ars()}

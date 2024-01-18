@@ -2,6 +2,7 @@
    IMPORTS
 """
 from os import remove
+import io
 import re
 import pdfplumber
 from classes.Item import Item
@@ -49,12 +50,18 @@ class OcrEngine:
         self.statement = Statement()
         self.list_splitted_item = []
 
-    def statement_orc_scanner_visa(self, pdf_path, bank="ICBC", entity="VISA"):
+    def statement_orc_scanner_visa(
+        self, pdf_path: str = None, pdf_content=None, bank="ICBC", entity="VISA"
+    ):
         self.statement.bank = bank
         self.statement.entity = entity
 
         # Get pdf text
-        text = self.extract_text_from_statement_pdf(pdf_path)
+        text = (
+            self.extract_text_from_statement_pdf(pdf_path)
+            if not pdf_content
+            else self.extract_text_from_statement_pdf_in_memory(pdf_content=pdf_content)
+        )
         items_set = ItemsSet(items=[])
         taxes_got = False
         previous_date = ""
@@ -312,8 +319,13 @@ class OcrEngine:
         )
 
     @staticmethod
-    def extract_text_from_statement_pdf(pdf_path):
+    def extract_text_from_statement_pdf(pdf_path: str):
         with pdfplumber.open(pdf_path) as pdf:
+            return "".join([page.extract_text() for page in pdf.pages])
+
+    @staticmethod
+    def extract_text_from_statement_pdf_in_memory(pdf_content):
+        with pdfplumber.open(io.BytesIO(pdf_content)) as pdf:
             return "".join([page.extract_text() for page in pdf.pages])
 
     @staticmethod

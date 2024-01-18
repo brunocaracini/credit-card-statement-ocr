@@ -1,10 +1,12 @@
+import re
+
 class Item:
     """
        Class that represents an item of the credit card statement. An item is a
        a charge, such as a purchase or a tax.
     """
 
-    def __init__(self,id=None,date=None,concept=None,ars_amount=None,usd_amount=None,current_quota=None,total_quotes=None,receipt=None, type='buy'):
+    def __init__(self,id=None,date=None,concept=None,ars_amount=0,usd_amount=0,current_quota=None,total_quotes=None,receipt='-', type='buy'):
         self._id = id
         self._date = date
         self._concept = concept
@@ -107,6 +109,8 @@ class Item:
     def set_quotes_values_from_string(self,value,quote_prefix=''):
         value = value.replace(quote_prefix,'').strip(' ')
         current_quota,total_quotes = value.split('/')
-        self.current_quota = int(current_quota)
-        self.total_quotes = int(total_quotes)
+        self.current_quota = int(re.sub(r'\D', '', current_quota))
+        self.total_quotes = int(re.sub(r'\D', '', total_quotes))
         self.porcentage_paid = round((self.current_quota - 1) * 100/self.total_quotes) if self.type != 'taxes' else None
+    
+    

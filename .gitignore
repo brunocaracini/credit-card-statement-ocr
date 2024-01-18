@@ -134,9 +134,7 @@ __queuestorage__
 __azurite_db*__.json
 .python_packages
 
-# File extensions and test files
-/test.py
-/__pycache__
-*.pyc
+# File extensions
 *.pdf
 *.xlsx
+credit-cards-automation-7034849bd49b.json

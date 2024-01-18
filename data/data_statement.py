@@ -1,6 +1,24 @@
+from functools import wraps
+
 from data.data import Data
 from classes.Statement import Statement
 from libraries.ocr_engine import OcrEngine
+
+
+def instantiate_statements(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+
+        if isinstance(result, tuple):
+            return Statement(**dict(zip(DataStatement.COLUMNS, result)))
+        elif isinstance(result, list):
+            return [Statement(**dict(zip(DataStatement.COLUMNS, values))) for values in result]
+        else:
+            raise ValueError(
+                "Unsupported result type. Function should return a named tuple or a list of named tuples."
+            )
+    return wrapper
 
 class DataStatement(Data):
 
@@ -14,7 +32,9 @@ class DataStatement(Data):
         'taxes',
         'ars_total_amount',
         'usd_total_amount',
-        'filepath'
+        'filepath',
+        'is_processed',
+        'drive_id'
     ]
 
     FOREIGN_KEYS = [
@@ -56,6 +76,20 @@ class DataStatement(Data):
                 )
                 for res in self.cursor.fetchall()
             ]
+    
+    @instantiate_statements
+    def get_by_id_card(self, id_card: int):
+        from data import DataCardStatement
+        self.openConn()
+        query = f'''
+            SELECT {', '.join(['cs.' + column for column in self.COLUMNS])} 
+            FROM {self.TABLE_NAME} cs
+            JOIN {DataCardStatement.TABLE_NAME} ccs 
+                on cs.id = ccs.id_statement
+            WHERE ccs.id_credit_card = %s
+        '''
+        self.cursor.execute(query, (str(id_card),))
+        return self.cursor.fetchall()
     
     def insert(self, statement: Statement, id_user: int):
         values = [getattr(statement, col) for col in self.COLUMNS if getattr(statement, col)] + [id_user]

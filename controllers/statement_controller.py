@@ -25,22 +25,25 @@ class StatementController(DataStatement):
 
     def insert_with_ocr(
         self,
+        file: dict,
         filepath: str,
         entity: str,
         bank: str,
         year: int,
         month: int,
         id_user: int,
+        drive_id: str,
         id_credit_cards: int | list[int] = None,
         csv_export: bool = False,
     ):
-        statement = self.process_ocr(filepath, entity, bank)
+        statement = self.process_ocr(file=file, entity=entity, bank=bank)
         statement = self.set_statement_properties(
             statement=statement,
             filepath=filepath,
             year=year,
             month=month,
             id_user=id_user,
+            drive_id=drive_id,
             id_credit_cards=id_credit_cards,
         )
         self.insert_statement_related_data(
@@ -48,9 +51,9 @@ class StatementController(DataStatement):
         )
         return statement
 
-    def process_ocr(self, filepath: str, entity: str, bank: str):
-        statement = self.ocr_scann(filepath=filepath, entity=entity, bank=bank)
-        statement.print_all_item_sets()
+    def process_ocr(self, file, entity: str, bank: str):
+        statement = self.ocr_scann(file=file, entity=entity, bank=bank)
+        #statement.print_all_item_sets()
         return statement
 
     def set_statement_properties(
@@ -60,11 +63,14 @@ class StatementController(DataStatement):
         year: int,
         month: int,
         id_user: int,
+        drive_id: str,
         id_credit_cards: int | list[int] = None,
     ):
         statement.year = year
         statement.month = month
         statement.filepath = filepath
+        statement.is_processed = 1
+        statement.drive_id = drive_id
         if id_credit_cards:
             id_credit_cards = (
                 id_credit_cards
@@ -84,12 +90,14 @@ class StatementController(DataStatement):
                 id_credit_card=id_credit_card, id_statement=statement.id
             )
 
+        statement.print_all_item_sets()
         item_set_ids = self.data_item_set.insert_many(
             items_sets=statement.items_sets, id_credit_card_statement=statement.id
         )
+        print(item_set_ids)
         for i, itemset in enumerate(statement.items_sets):
             itemset.__setattr__("id", item_set_ids[i])
-
+        
         for item_set in statement.items_sets:
             self.data_item.insert_many(items=item_set.items, id_item_set=item_set.id)
 
@@ -100,13 +108,16 @@ class StatementController(DataStatement):
                 ]
             )
 
-    def ocr_scann(self, filepath: str, entity: str, bank: str):
+    def ocr_scann(self, file, entity: str, bank: str):
         ocr = OcrEngine()
         if entity.lower() == "visa" or entity.lower() == "mastercard":
             ocr.statement_orc_scanner_visa(
-                pdf_path=filepath, bank=bank, entity=entity.upper()
+                pdf_content=file, bank=bank, entity=entity.upper()
             )
         elif entity.lower() == "amex":
             pass
         ocr.statement.set_calcs()
         return ocr.statement
+
+    def get_by_id_card(self, id_card: int):
+        return super().get_by_id_card(id_card)

@@ -1,17 +1,101 @@
-'''from controllers.statement_controller import StatementController
-from data.data_statement import DataStatement
-sc = StatementController()
-s = sc.insert_with_ocr(
-    filepath='Resumen de tarjeta de crédito VISA-12-2023.pdf',
-    entity='visa',
-    bank='Santander',
-    year=2023,
-    month=5,
-    id_user=1,
-    id_credit_cards=1
-)
-print(s.ars_total_amount)'''
+a = [
+    ["22-Agosto-24", "E M/N DRIADE EUR 2,60 ", 2.64, 1, 1, "342249", "buy", 107],
+    [
+        "22-Agosto-25",
+        "E HOTEL DIAMOND NAPOLI EUR 16,00 ",
+        16.22,
+        1,
+        1,
+        "801241",
+        "buy",
+        107,
+    ],
+    ["22-Agosto-25", "E MCD NAPOLI EUR 14,45 ", 14.59, 1, 1, "593680", "buy", 107],
+    ["22-Agosto-25", "E PAM SUPERMERCATO EUR 6,24 ", 6.3, 1, 1, "332836", "buy", 107],
+    [
+        "22-Agosto-29",
+        "E TENTAZIONI-PASTICCERIA-G EUR 7,00 ",
+        7.13,
+        1,
+        1,
+        "780592",
+        "buy",
+        107,
+    ],
+    [
+        "22-Agosto-22",
+        "Setiem. 310358 E META SUPERMERCATI EUR 7,79 ",
+        7.93,
+        1,
+        1,
+        "01",
+        "buy",
+        107,
+    ],
+    ["22-Agosto-01", "E A CASA DI LUNA EUR 61,00 ", 61.83, 1, 1, "182498", "buy", 107],
+    ["22-Agosto-01", "E GELATERIA GIANNI EUR 1,00 ", 1.02, 1, 1, "629587", "buy", 107],
+    ["22-Agosto-01", "E GELATERIA GIANNI EUR 6,00 ", 6.11, 1, 1, "629588", "buy", 107],
+    ["22-Agosto-02", "E DIPIU' EUR 12,80 ", 13.01, 1, 1, "548998", "buy", 107],
+    ["22-Agosto-02", "E META SUPERMERCATI EUR 5,09 ", 5.17, 1, 1, "136590", "buy", 107],
+    [
+        "22-Agosto-03",
+        "E SHAMPOL 9 DI FERRONI .. EUR 30,00 ",
+        30.41,
+        1,
+        1,
+        "032458",
+        "buy",
+        107,
+    ],
+    ["22-Agosto-04", "E OPERA VIVA GELATERIA EUR 2,50 ", 2.54, "-", "taxes", 107],
+    ["22-Agosto-06", "WWW.TIENDALEON.COM.AR ", 2100.0, 1, 1, "356850", "buy", 107],
+    ["22-Agosto-06", "MERCADOPAGO*FLYBONDIC2777 ", 9362.08, 1, 1, "006379", "buy", 107],
+    ["22-Agosto-07", "WWW.TIENDALEON.COM.AR ", 2100.0, 1, 1, "422047", "buy", 107],
+    [
+        "22-Agosto-07",
+        "MERCADOPAGO*FLYBONDIC2777 ",
+        13443.84,
+        1,
+        1,
+        "004130",
+        "buy",
+        107,
+    ],
+    ["22-Agosto-09", "E PILONI GIULIO EUR 3,00 ", 3.04, 1, 1, "101495", "buy", 107],
+    [
+        "22-Agosto-09",
+        "E ROMA TIBURT. SELF SERVICE EUR 1,00 ",
+        1.01,
+        1,
+        1,
+        "069148",
+        "buy",
+        107,
+    ],
+    ["22-Agosto-10", "E MURATTE SRL EUR 8,00 ", 8.17, 1, 1, "278787", "buy", 107],
+    [
+        "22-Agosto-22",
+        "Setiem. 048744 E BAR RUFFINI EUR 5,00 ",
+        5.11,
+        1,
+        1,
+        "11",
+        "buy",
+        107,
+    ],
+    [
+        "22-Agosto-11",
+        "E CAFFE' E PIZZA DI ROBERT EUR 5,20 ",
+        5.31,
+        1,
+        1,
+        "009699",
+        "buy",
+        107,
+    ],
+    ["22-Agosto-13", "E WWW.TPER.IT EUR 5,10 ", 5.25, 1, 1, "201378", "buy", 107],
+    ["22-Agosto-18", "E DIPIU' EUR 12,39 ", 12.56, 1, 1, "038531", "buy", 107],
+]
 
-from data.data_card import DataCard
-
-dc = DataCard()
+for b in a:
+    print(len(b))

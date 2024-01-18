@@ -1,2 +1,2 @@
-from card_controller import CardController
-from statement_controller import StatementController
+from controllers.card_controller import CardController
+from controllers.statement_controller import StatementController
