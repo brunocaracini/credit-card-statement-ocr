@@ -1,0 +1,3 @@
+[submodule "submodules/google_drive_module"]
+	path = submodules/google_drive_module
+	url = https://github.com/brunocaracini/google-drive-module
