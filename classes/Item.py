@@ -24,7 +24,7 @@ class Item:
                 ID: {self.id}
                 Date: {self.date}
                 Concept: {self.concept}
-                Ars Amount: {self.ars_amount}
+                ARS Amount: {self.ars_amount}
                 USD Amount: {self.usd_amount}
                 Current Quote: {self.current_quota}
                 Total Quotes: {self.total_quotes}

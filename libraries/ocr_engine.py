@@ -35,22 +35,30 @@ class OcrEngine:
     # Prefixs
     QUOTE_PREFIX = ["CUOTA", "C."]
 
+    # Currencies
+    CURRENCIES = [
+        " USD ",
+        " EUR ",
+        " GBP ",
+    ]
+
     # Taxes
     IMPUESTOS = ["IMPUESTO"]
     IVA = ["IVA", "I.V.A"]
     INTERESES_FINANCIACION = ["INTERESES"]
 
     # Invalid Line values
-    INVALID_LINES = ["SU PAGO EN PESOS", "SU PAGO", "TNA"]
+    INVALID_LINES = ["SU PAGO EN PESOS", "SU PAGO", "TNA", "SALDO ANTERIOR"]
 
     # Values
     IVA_VALUE = 0.21
 
+
     def __init__(self):
-        self.statement = Statement()
+        self.statement = Statement(items_sets=[], is_processed=0)
         self.list_splitted_item = []
 
-    def statement_orc_scanner_visa(
+    def statement_orc_scanner(
         self, pdf_path: str = None, pdf_content=None, bank="ICBC", entity="VISA"
     ):
         self.statement.bank = bank
@@ -114,21 +122,29 @@ class OcrEngine:
                 quote = self.extract_quote()
                 receipt = self.exctract_receipt(entity=entity)
                 ars_amount = self.extract_ars_amount()
+                usd_amount = 0
                 concept = self.extract_concept()
 
+                if self.contains_any_currency(concept=concept):
+                    usd_amount = ars_amount
+                    ars_amount = 0
+
                 if not self.is_tax(concept):
+                    print(concept)
                     item = Item(
                         date=date,
                         concept=concept,
                         ars_amount=ars_amount,
+                        usd_amount=usd_amount,
                         receipt=receipt,
                         type="buy" if ars_amount >= 0 else "bonus",
                     )
                     item.set_quotes_values_from_string(quote)
+                    print(item)
                 else:
                     ars_amount = (
                         ars_amount
-                        if concept not in getattr(self, "IVA") and entity == "VISA"
+                        if concept not in getattr(self, "IVA") and entity.upper() == "VISA"
                         else round(ars_amount * getattr(self, "IVA_VALUE"), 2)
                     )
                     item = Item(
@@ -294,7 +310,7 @@ class OcrEngine:
             elif (
                 len(day_number) >= 2
                 and self.is_number(value=day_number)
-                and int(day_number) <= 31
+                and int(day_number.strip(",").strip('.')) <= 31
             ):
                 self.list_splitted_item.remove(self.list_splitted_item[0])
                 return self.replace_day_number_in_formated_date(
@@ -304,6 +320,18 @@ class OcrEngine:
                 return False
         else:
             return self.extract_date()
+        
+    def contains_any_currency(self, concept:str):
+        """
+        Check if any currency in the list currencies is present in the given concept.
+        
+        Args:
+        - concept (str): The string to search within.
+        
+        Returns:
+        - bool: True if any currency is found, False otherwise.
+        """
+        return any(currency in concept for currency in self.CURRENCIES)
 
     @staticmethod
     def is_number(value):

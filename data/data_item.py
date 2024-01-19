@@ -48,12 +48,12 @@ class DataItem(Data):
 
     def insert_many(self, items: list[Item], id_item_set: int):
         values = [
-            [getattr(item, col) for col in self.COLUMNS if getattr(item, col)]
+            [getattr(item, col) for col in self.COLUMNS if getattr(items[0], col, None) is not None]
             + [id_item_set]
             for item in items
         ]
         columns = [
-            col for col in self.COLUMNS if getattr(items[0], col)
+            col for col in self.COLUMNS if getattr(items[0], col, None) is not None
         ] + self.FOREIGN_KEYS
         return super().insert(self.TABLE_NAME, columns, values)
 

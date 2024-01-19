@@ -44,12 +44,6 @@ class DataStatement(Data):
     def __init__(self):
         super().__init__()
 
-    def get_all(self):
-        orc = OcrEngine()
-        orc.statement_orc_scanner_visa('C:/Users/bruno.tomas.caracini/OneDrive - Accenture/Desktop/Ariel/Visa ICBC Resumen 202202.pdf',entity='VISA')
-        orc.statement.calc_total_amount_ars()
-        return [orc.statement]
-
     def get_latests(self, id_user: int | str):
         self.openConn()
         query = f'''
@@ -95,4 +89,9 @@ class DataStatement(Data):
         values = [getattr(statement, col) for col in self.COLUMNS if getattr(statement, col)] + [id_user]
         columns = [col for col in self.COLUMNS if getattr(statement, col)] + self.FOREIGN_KEYS
         return super().insert(self.TABLE_NAME, columns, values)
+    
+    def update(self, statement: Statement):
+        values = [getattr(statement, col) for col in self.COLUMNS if getattr(statement, col)]
+        columns = [col for col in self.COLUMNS if getattr(statement, col)]
+        return super().update(self.TABLE_NAME, set_values=dict(zip(columns, values)), condition=f"id={statement.id}")
 

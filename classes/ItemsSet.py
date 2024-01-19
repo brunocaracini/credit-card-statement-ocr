@@ -73,6 +73,9 @@ class ItemsSet:
     #Calculations
     def calc_total_amount_ars(self,ret=False):
         return round(sum([item.ars_amount for item in self.items if item.ars_amount]),2)
+    
+    def calc_total_amount_usd(self,ret=False):
+        return round(sum([item.usd_amount for item in self.items if item.usd_amount]),2)
 
     def get_items_count(self):
         return len(self.items)

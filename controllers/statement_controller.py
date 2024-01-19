@@ -23,6 +23,9 @@ class StatementController(DataStatement):
     def insert(self, statement: Statement, id_user: int):
         return super().insert(statement=statement, id_user=id_user)
 
+    def update(self, statement: Statement):
+        return super().update(statement=statement,)
+
     def insert_with_ocr(
         self,
         file: dict,
@@ -46,15 +49,26 @@ class StatementController(DataStatement):
             drive_id=drive_id,
             id_credit_cards=id_credit_cards,
         )
-        self.insert_statement_related_data(
-            statement=statement, csv_export=csv_export
-        )
+        try:
+            self.insert_statement_related_data(
+                statement=statement, csv_export=csv_export
+            )
+        except Exception as e:
+            print(f'Error while inserting data of statement with ID {statement.id}')
+            statement.is_processed = 0
+            self.update(statement=statement)
         return statement
 
     def process_ocr(self, file, entity: str, bank: str):
-        statement = self.ocr_scann(file=file, entity=entity, bank=bank)
-        #statement.print_all_item_sets()
-        return statement
+        ocr = OcrEngine()
+        if entity.lower() == "visa" or entity.lower() == "mastercard" or entity.lower() == "amex":
+            ocr.statement_orc_scanner(
+                pdf_content=file, bank=bank, entity=entity.upper()
+            )
+        elif entity.lower() == "amex":
+            pass
+        ocr.statement.set_calcs()
+        return ocr.statement
 
     def set_statement_properties(
         self,
@@ -66,18 +80,19 @@ class StatementController(DataStatement):
         drive_id: str,
         id_credit_cards: int | list[int] = None,
     ):
-        statement.year = year
-        statement.month = month
-        statement.filepath = filepath
-        statement.is_processed = 1
-        statement.drive_id = drive_id
-        if id_credit_cards:
-            id_credit_cards = (
-                id_credit_cards
-                if isinstance(id_credit_cards, list)
-                else [id_credit_cards]
-            )
-            statement.id_credit_cards = id_credit_cards
+        properties_to_set = {
+            'year': year,
+            'month': month,
+            'filepath': filepath,
+            'is_processed': 1,
+            'drive_id': drive_id,
+        }
+
+        for property_name, value in properties_to_set.items():
+            setattr(statement, property_name, value)
+
+        statement.id_credit_cards = id_credit_cards if isinstance(id_credit_cards, list) else [id_credit_cards] if id_credit_cards else None
+
         statement.remove_empty_item_sets()
         statement.id = self.insert(statement=statement, id_user=id_user)
         return statement
@@ -90,11 +105,11 @@ class StatementController(DataStatement):
                 id_credit_card=id_credit_card, id_statement=statement.id
             )
 
-        statement.print_all_item_sets()
+        statement.print_all_items()
         item_set_ids = self.data_item_set.insert_many(
             items_sets=statement.items_sets, id_credit_card_statement=statement.id
         )
-        print(item_set_ids)
+
         for i, itemset in enumerate(statement.items_sets):
             itemset.__setattr__("id", item_set_ids[i])
         
@@ -107,17 +122,6 @@ class StatementController(DataStatement):
                     item for item_set in statement.items_sets for item in item_set.items
                 ]
             )
-
-    def ocr_scann(self, file, entity: str, bank: str):
-        ocr = OcrEngine()
-        if entity.lower() == "visa" or entity.lower() == "mastercard":
-            ocr.statement_orc_scanner_visa(
-                pdf_content=file, bank=bank, entity=entity.upper()
-            )
-        elif entity.lower() == "amex":
-            pass
-        ocr.statement.set_calcs()
-        return ocr.statement
-
+        
     def get_by_id_card(self, id_card: int):
         return super().get_by_id_card(id_card)

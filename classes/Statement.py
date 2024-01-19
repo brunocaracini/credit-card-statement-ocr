@@ -130,6 +130,9 @@ class Statement():
     def calc_total_amount_ars(self):
         return round(sum([item_set.calc_total_amount_ars() for item_set in self.items_sets]),2)
 
+    def calc_total_amount_usd(self):
+        return round(sum([item_set.calc_total_amount_usd() for item_set in self.items_sets]),2)
+
     def calc_total_amount_ars_per_card(self):
         return [item_set.calc_total_amount_ars() for item_set in self.items_sets if item_set.type == 'buy']
 
@@ -149,6 +152,7 @@ class Statement():
         for item_set in self.items_sets:
             item_set.total_ars_amount = item_set.calc_total_amount_ars()
         self.ars_total_amount = self.calc_total_amount_ars()
+        self.usd_total_amount = self.calc_total_amount_usd()
         self.taxes = self.calc_total_amount_taxes_ars()
 
     #Counts
