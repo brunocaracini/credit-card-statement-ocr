@@ -240,6 +240,8 @@ class OcrEngine:
                     if negative
                     else round(float(number), 2)
                 )
+        if first_element_zero:
+            return 0
 
     def extract_concept(self):
         return " ".join(self.list_splitted_item) + " "
