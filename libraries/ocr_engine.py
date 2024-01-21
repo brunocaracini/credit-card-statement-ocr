@@ -19,6 +19,7 @@ class OcrEngine:
     # Regexs
     DATE_REGEX = [
         ".*?^([0-9][0-9](/|-)[0-9][0-9](/|-)[0-9][0-9])$.*",
+        ".*?^([0-9][0-9](/|-|\.)[0-9][0-9](/|-|\.)[0-9][0-9])$.*",
         "^(([0-9])|([0][0-9])|([1-2][0-9])|([3][0-1]))\-(Ene|Feb|Mar|Apr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)\-\d{2}$",
         "^(([0-9])|([0][0-9])|([1-2][0-9])|([3][0-1]))\-(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiem.|Octubre|Noviem.|Diciem.)\-\d{2}$",
     ]
@@ -130,7 +131,6 @@ class OcrEngine:
                     ars_amount = 0
 
                 if not self.is_tax(concept):
-                    print(concept)
                     item = Item(
                         date=date,
                         concept=concept,
@@ -140,7 +140,6 @@ class OcrEngine:
                         type="buy" if ars_amount >= 0 else "bonus",
                     )
                     item.set_quotes_values_from_string(quote)
-                    print(item)
                 else:
                     ars_amount = (
                         ars_amount
@@ -221,6 +220,7 @@ class OcrEngine:
             return receipts[0].replace("*", "")
 
     def extract_ars_amount(self):
+        first_element_zero = False
         for element in self.list_splitted_item[::-1]:
             number = element.strip(" ").replace(".", "").replace(",", ".")
             if self.is_number(number):
@@ -232,6 +232,9 @@ class OcrEngine:
                 elif number[0] == "-":
                     number = number[1:]
                     negative = True
+                if float(number) == 0:
+                    first_element_zero=True
+                    continue
                 return (
                     round(float(number) * -1, 2)
                     if negative
