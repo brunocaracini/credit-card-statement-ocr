@@ -51,6 +51,14 @@ class OcrEngine:
     # Invalid Line values
     INVALID_LINES = ["SU PAGO EN PESOS", "SU PAGO", "TNA", "SALDO ANTERIOR"]
 
+    #Statement dates
+    STATEMENT_DATES = {
+        "CURRENT_DUE_DATE": ["VENCIMIENTOACTUAL", "VTOACTUAL", "VTO.ACTUAL"],
+        "NEXT_DUE_DATE": ["PROXIMOVENCIMIENTO", "PROXIMOVTO", "PROXIMOVTO."],
+        "CURRENT_CLOSURE": ["CIERREACTUAL"],
+        "NEXT_CLOSURE": ["PROXIMOCIERRE"]
+    }
+
     # Values
     IVA_VALUE = 0.21
 
@@ -76,9 +84,12 @@ class OcrEngine:
         previous_date = ""
 
         for line in text.split("\n"):
+            
             self.list_splitted_item = list(
                 filter(lambda x: len(x) > 0, line.split(" "))
             )
+            print(self.list_splitted_item)
+            print(self.extract_statement_dates())
             # For MASTERCARD only: looking for taxes at the begining
             if entity == "MASTERCARD" and not taxes_got:
                 taxes_items_set = ItemsSet(items=[])
@@ -290,6 +301,12 @@ class OcrEngine:
             > 1
             else False
         )
+    
+    def extract_statement_dates(self):
+        for date_list in self.STATEMENT_DATES.keys():
+            if any((self.list_splitted_item[i] + self.list_splitted_item[i + 1]).strip().upper() in self.STATEMENT_DATES[date_list] for i in range(len(self.list_splitted_item) - 1)):
+                return date_list
+        return False
 
     def multi_regex_match(self, attr, previous_date):
         # Creating value to be asserted
@@ -341,7 +358,9 @@ class OcrEngine:
     @staticmethod
     def is_number(value):
         value = value.strip(" ").replace(",", ".")
-        if value[-1] == "-":
+        if value == "":
+            return False
+        elif value[-1] == "-":
             value = value[:-1]
         elif value[0] == "-":
             value = value[1:]
