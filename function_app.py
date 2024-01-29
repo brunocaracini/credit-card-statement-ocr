@@ -34,22 +34,25 @@ def process_card_statement(card, logger, statement_controller):
     logger.info("-" * 80)
     logger.info(f"Running for card {card.bank} - {card.entity}")
 
+    # Get the files
     files = GoogleDrive.get_files(
         calculate_paths=True, path=card.drive_path, item_type="file"
     )
     statements = statement_controller.get_by_id_card(id_card=card.id)
 
+    # Filter the new statements
     new_statements = [
         file
         for file in files
         if file["id"] not in {statement.drive_id for statement in statements}
     ]
 
+    # Process new Statements
     for file in new_statements:
         year, month = map(
             int, re.search(r"(\d{4})-(\d{2})\.pdf", file["name"]).groups()
         )
-        statement_controller.insert_with_ocr(
+        statement = statement_controller.insert_with_ocr(
             file=GoogleDrive.download_file_content_bytes_by_id(file_id=file["id"]),
             bank=card.bank,
             entity=card.entity,
@@ -59,6 +62,10 @@ def process_card_statement(card, logger, statement_controller):
             id_credit_cards=card.id,
             drive_id=file["id"],
             filepath=file["path"],
+        )
+
+        statement_controller.create_calendar_event_next_dates(
+            statement=statement, bank=card.bank, entity=card.entity
         )
 
     logger.info("-" * 80) if new_statements else logger.info(

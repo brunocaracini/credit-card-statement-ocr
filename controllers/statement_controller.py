@@ -1,4 +1,5 @@
 from classes.Statement import Statement
+from calendar_lib import GoogleCalendar
 from libraries.ocr_engine import OcrEngine
 from data import DataItem, DataItemSet, DataStatement, DataCardStatement
 
@@ -24,7 +25,9 @@ class StatementController(DataStatement):
         return super().insert(statement=statement, id_user=id_user)
 
     def update(self, statement: Statement):
-        return super().update(statement=statement,)
+        return super().update(
+            statement=statement,
+        )
 
     def insert_with_ocr(
         self,
@@ -54,19 +57,21 @@ class StatementController(DataStatement):
                 statement=statement, csv_export=csv_export
             )
         except Exception as e:
-            print(f'Error while inserting data of statement with ID {statement.id}')
+            print(f"Error while inserting data of statement with ID {statement.id}")
             statement.is_processed = 0
             self.update(statement=statement)
         return statement
 
     def process_ocr(self, file, entity: str, bank: str):
         ocr = OcrEngine()
-        if entity.lower() == "visa" or entity.lower() == "mastercard" or entity.lower() == "amex":
+        if (
+            entity.lower() == "visa"
+            or entity.lower() == "mastercard"
+            or entity.lower() == "amex"
+        ):
             ocr.statement_orc_scanner(
                 pdf_content=file, bank=bank, entity=entity.upper()
             )
-        elif entity.lower() == "amex":
-            pass
         ocr.statement.set_calcs()
         return ocr.statement
 
@@ -81,17 +86,23 @@ class StatementController(DataStatement):
         id_credit_cards: int | list[int] = None,
     ):
         properties_to_set = {
-            'year': year,
-            'month': month,
-            'filepath': filepath,
-            'is_processed': 1,
-            'drive_id': drive_id,
+            "year": year,
+            "month": month,
+            "filepath": filepath,
+            "is_processed": 1,
+            "drive_id": drive_id,
         }
 
         for property_name, value in properties_to_set.items():
             setattr(statement, property_name, value)
 
-        statement.id_credit_cards = id_credit_cards if isinstance(id_credit_cards, list) else [id_credit_cards] if id_credit_cards else None
+        statement.id_credit_cards = (
+            id_credit_cards
+            if isinstance(id_credit_cards, list)
+            else [id_credit_cards]
+            if id_credit_cards
+            else None
+        )
 
         statement.remove_empty_item_sets()
         statement.id = self.insert(statement=statement, id_user=id_user)
@@ -112,7 +123,7 @@ class StatementController(DataStatement):
 
         for i, itemset in enumerate(statement.items_sets):
             itemset.__setattr__("id", item_set_ids[i])
-        
+
         for item_set in statement.items_sets:
             self.data_item.insert_many(items=item_set.items, id_item_set=item_set.id)
 
@@ -122,6 +133,46 @@ class StatementController(DataStatement):
                     item for item_set in statement.items_sets for item in item_set.items
                 ]
             )
-        
+
     def get_by_id_card(self, id_card: int):
         return super().get_by_id_card(id_card)
+
+    def create_calendar_task_current_due(
+        self, statement: Statement, entity: str, bank: str
+    ):
+        summary = f"Pagar {entity} {bank} - Total de ${str(statement.ars_total_amount)} ARS + ${statement.usd_total_amount} USD"
+        description = f"""El resumen tarjeta {entity} {bank} del mes de {statement.month_name} con cierre el {statement.current_closure.strftime('%d/%m/%Y')} vence este día.\nEl total a pagar es de:
+            - ${str(statement.ars_total_amount)} ARS
+            - ${statement.usd_total_amount} USD
+        """
+        try:
+            # TODO: Insert task for payment
+            pass
+        except:
+            print("Error while creating the calendar task")
+
+    def create_calendar_event_next_dates(
+        self, statement: Statement, entity: str, bank: str
+    ):
+        summary_closure = f"Cierre {entity} {bank}"
+        description_closure = f"El resumen tarjeta {entity} {bank} del mes de {statement.month_name} cierra el {statement.next_closure.strftime('%d/%m/%Y')}"
+
+        summary_due = f"Vencimiento {entity} {bank}"
+        description_due = f"El resumen tarjeta {entity} {bank} del mes de {statement.month_name} vence el {statement.next_due_date.strftime('%d/%m/%Y')}"
+        try:
+           GoogleCalendar.create_event(
+                all_day=True,
+                start=statement.next_closure,
+                end=statement.next_closure,
+                summary=summary_closure,
+                description=description_closure
+            )
+           GoogleCalendar.create_event(
+                all_day=True,
+                start=statement.next_due_date,
+                end=statement.next_due_date,
+                summary=summary_due,
+                description=description_due
+            )
+        except:
+            print("Error while creating the calendar event")

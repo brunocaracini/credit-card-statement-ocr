@@ -8,7 +8,7 @@ class Statement():
        Class thar repsents a credit card statement
     """
     
-    def __init__(self,id=None,bank=None,entity=None,year=None,month=12,taxes=None,ars_total_amount=None,usd_total_amount=None,id_credit_cards=None,items_sets=[],filepath=None,is_processed:bool=False, drive_id: str = None):
+    def __init__(self,id=None,bank=None,entity=None,year=None,month=12,taxes=None,ars_total_amount=None,usd_total_amount=None,id_credit_cards=None,items_sets=[],filepath=None,is_processed:bool=False, drive_id: str = None, current_closure=None, current_due_date=None, next_closure=None, next_due_date=None):
         self.id = id
         self._bank = bank
         self._entity = entity
@@ -22,7 +22,11 @@ class Statement():
         self._filepath = filepath
         self._is_processed = is_processed
         self._drive_id = drive_id
-        self.month_name = calendar.month_name[month]
+        self._current_closure = current_closure
+        self._current_due_date = current_due_date
+        self._next_closure = next_closure
+        self._next_due_date = next_due_date
+        self.month_name = self._translate_month_name(month=month)
         
     #Getters
     @property       
@@ -72,6 +76,22 @@ class Statement():
     @property
     def drive_id(self):
         return self._drive_id
+    
+    @property
+    def current_closure(self):
+        return self._current_closure
+    
+    @property
+    def current_due_date(self):
+        return self._current_due_date
+    
+    @property
+    def next_closure(self):
+        return self._next_closure
+    
+    @property
+    def next_due_date(self):
+        return self._next_due_date
 
     #Setters
     @bank.setter
@@ -122,6 +142,22 @@ class Statement():
     def drive_id(self, value):
         self._drive_id = value
 
+    @current_closure.setter
+    def current_closure(self, value):
+        self._current_closure = value
+
+    @current_due_date.setter
+    def current_due_date(self, value):
+        self._current_due_date = value
+
+    @next_closure.setter
+    def next_closure(self, value):
+        self._next_closure = value
+
+    @next_due_date.setter
+    def next_due_date(self, value):
+        self._next_due_date = value
+
     #Appends
     def append_items_set(self,item_set):
         self.items_sets.append(item_set)
@@ -155,6 +191,12 @@ class Statement():
         self.usd_total_amount = self.calc_total_amount_usd()
         self.taxes = self.calc_total_amount_taxes_ars()
 
+    def set_date_fields_from_dict(self, date_dict):
+        self.current_closure = date_dict.get('current_closure', self.current_closure)
+        self.current_due_date = date_dict.get('current_due_date', self.current_due_date)
+        self.next_closure = date_dict.get('next_closure', self.next_closure)
+        self.next_due_date = date_dict.get('next_due_date', self.next_due_date)
+
     #Counts
     def count_total_buys(self):
         return len([item for item_set in self.items_sets for item in item_set.items if item_set.type == 'buy'])
@@ -172,6 +214,9 @@ class Statement():
     #Updates
     def remove_empty_item_sets(self):
         self.items_sets = [item_set for item_set in self.items_sets if len(item_set.items) > 0]
+    
+    def _translate_month_name(self, month):
+        return {"January": "Enero", "February": "Febrero", "March": "Marzo", "April": "Abril", "May": "Mayo", "June": "Junio", "July": "Julio", "August": "Agosto", "September": "Septiembre", "October": "Octubre", "November": "Noviembre", "December": "Diciembre"}.get(calendar.month_name[month].title(), None)
 
     #Prints
     def print_all_items(self):

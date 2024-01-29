@@ -34,7 +34,11 @@ class DataStatement(Data):
         'usd_total_amount',
         'filepath',
         'is_processed',
-        'drive_id'
+        'drive_id',
+        'current_closure',
+        'current_due_date',
+        'next_closure',
+        'next_due_date'
     ]
 
     FOREIGN_KEYS = [
