@@ -1,5 +1,7 @@
+import locale
 from classes.Statement import Statement
 from calendar_lib import GoogleCalendar
+from tasks_lib import GoogleTasks
 from libraries.ocr_engine import OcrEngine
 from data import DataItem, DataItemSet, DataStatement, DataCardStatement
 
@@ -140,15 +142,22 @@ class StatementController(DataStatement):
     def create_calendar_task_current_due(
         self, statement: Statement, entity: str, bank: str
     ):
-        summary = f"Pagar {entity} {bank} - Total de ${str(statement.ars_total_amount)} ARS + ${statement.usd_total_amount} USD"
-        description = f"""El resumen tarjeta {entity} {bank} del mes de {statement.month_name} con cierre el {statement.current_closure.strftime('%d/%m/%Y')} vence este día.\nEl total a pagar es de:
-            - ${str(statement.ars_total_amount)} ARS
-            - ${statement.usd_total_amount} USD
+        locale.setlocale(locale.LC_NUMERIC, 'es_AR')
+        formatted_ars = locale.format_string("%.2f", statement.ars_total_amount, grouping=True)
+        formatted_usd = locale.format_string("%.2f", statement.usd_total_amount, grouping=True)
+        summary = f"Pagar {entity} {bank} - Total de ${str(formatted_ars)} ARS + ${str(formatted_usd)} USD"
+        description = f"""El resumen tarjeta {entity} {bank} del mes de {statement.month_name} con cierre el {statement.current_closure.strftime('%d/%m/%Y')} vence este día.\n\nEl total a pagar es de:
+            - ${str(formatted_ars)} ARS
+            - ${str(formatted_usd)} USD
         """
         try:
-            # TODO: Insert task for payment
-            pass
-        except:
+            GoogleTasks.create_task(
+                title=summary,
+                notes=description,
+                due=statement.current_due_date
+            )
+        except Exception as error:
+            raise error
             print("Error while creating the calendar task")
 
     def create_calendar_event_next_dates(
