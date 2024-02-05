@@ -11,7 +11,7 @@ class GoogleCalendar:
     }
     key_file_location = "credit-cards-automation-7034849bd49b.json"
 
-    TARGET_CALENDAR_ID = "trc3lp054jnp25o88n9b3pncf4@group.calendar.google.com"
+    TARGET_CALENDAR_ID = "107fbd898fc41bdbf7b8963f6733c79b2788293a64bc121c55a8a93f447ded4e@group.calendar.google.com"
     TARGET_TASK_LIST_ID = "MDYxNDY1MjAzMTAyNTk3NTU5NTA6MDow"
 
     # Decorators:
@@ -232,7 +232,7 @@ class GoogleCalendar:
         task = {
             "title": title,
             "notes": notes,
-            "due": due.date().isoformat() if due else None,
+            "due": due.isoformat() + "Z" if due else None,
             "assignee": {"email": assigned_email}
         }
 
