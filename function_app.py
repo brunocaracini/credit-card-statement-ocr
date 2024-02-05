@@ -64,6 +64,10 @@ def process_card_statement(card, logger, statement_controller):
             filepath=file["path"],
         )
 
+        statement_controller.create_calendar_task_current_due(
+            statement=statement, bank=card.bank, entity=card.entity
+        )
+
         statement_controller.create_calendar_event_next_dates(
             statement=statement, bank=card.bank, entity=card.entity
         )
