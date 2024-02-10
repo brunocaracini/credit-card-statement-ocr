@@ -6,7 +6,8 @@ from resources.logger import Logger
 from controllers import CardController, StatementController
 from submodules.google_drive_module.drive import GoogleDrive
 
-if not os.getenv("ENVIRONMENT_NAME"):
+ENVIRONMENT_NAME = os.getenv("ENVIRONMENT_NAME")
+if not ENVIRONMENT_NAME or ENVIRONMENT_NAME.lower() == "local":
     load_dotenv()
 
 app = func.FunctionApp()
@@ -76,6 +77,10 @@ def process_card_statement(card, logger, statement_controller):
             statement=statement, bank=card.bank, entity=card.entity
         )
 
-    logger.info("-" * 80) if new_statements else logger.info(
-        f"All statements have been processed for {card.bank} - {card.entity}"
+    (
+        logger.info("-" * 80)
+        if new_statements
+        else logger.info(
+            f"All statements have been processed for {card.bank} - {card.entity}"
+        )
     )
