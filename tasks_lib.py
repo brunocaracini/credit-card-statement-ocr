@@ -1,16 +1,25 @@
 import os
+import requests
 import datetime
+from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
+load_dotenv()
+
 
 class GoogleTasks:
+    # Authentication and scopes
     scope = "https://www.googleapis.com/auth/tasks"
-    key_file_location = "client_secret.json"
-    TARGET_TASK_LIST_ID = "MDYwNDExMTMwNTE2MzQ2MTI3NTU6MDow"
+    oauth_endpoint = "https://oauth2.googleapis.com/token"
+    access_token = None
+    refresh_token = os.getenv("GOOGLE_CREDENTIALS_REFRESH_TOKEN")
+
+    # Targets
+    TARGET_TASK_LIST_ID = os.getenv("GOOGLE_TASKS_TARGET_TASK_LIST_ID")
 
     # Decorators:
 
@@ -21,7 +30,6 @@ class GoogleTasks:
                 api_name="tasks",
                 api_version="v1",
                 scopes=GoogleTasks.scope,
-                key_file_location=GoogleTasks.key_file_location,
             )
             result = func(service, *args, **kwargs)
             return result
@@ -61,7 +69,7 @@ class GoogleTasks:
     # Private methods:
 
     @staticmethod
-    def _get_service(api_name, api_version, scopes, key_file_location):
+    def _get_service(api_name, api_version, scopes):
         """Get a service that communicates to a Google API.
 
         Args:
@@ -74,23 +82,32 @@ class GoogleTasks:
             A service that is connected to the specified API.
         """
         creds = None
-        if os.path.exists("token.json"):
-            creds = Credentials.from_authorized_user_file("token.json", scopes)
-        
+
+        if GoogleTasks.access_token:
+            creds = Credentials(token=GoogleTasks.access_token, scopes=scopes)
+
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "client_secret.json", scopes
-                )
-                creds = flow.run_local_server(port=0)
-            with open("token.json", "w") as token:
-                token.write(creds.to_json())
+            payload = (
+                f"client_id={os.getenv('GOOGLE_CREDENTIALS_CLIENT_ID')}&"
+                f"client_secret={os.getenv('GOOGLE_CREDENTIALS_CLIENT_SECRET')}&"
+                f"refresh_token={os.getenv('GOOGLE_CREDENTIALS_REFRESH_TOKEN')}&"
+                f"grant_type={os.getenv('GOOGLE_CREDENTIALS_GRANT_TYPE')}"
+            )
+            headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+            response = requests.request(
+                "POST", GoogleTasks.oauth_endpoint, headers=headers, data=payload
+            )
+
+            token = response.json()["access_token"]
+            creds = Credentials(token=token, scopes=scopes)
+
+            if creds.valid:
+                GoogleTasks.access_token = token
 
         try:
-            service = build("tasks", "v1", credentials=creds)
+            service = build(api_name, api_version, credentials=creds)
             return service
         except HttpError as err:
             print(err)
@@ -121,7 +138,6 @@ class GoogleTasks:
             task = service.tasks().insert(tasklist=task_list_id, body=task).execute()
             return task
         except HttpError as error:
-            raise error
             logger.error(f"An error occurred: {error}")
             return None
 
@@ -138,4 +154,6 @@ class GoogleTasks:
 
 
 if __name__ == "__main__":
-    GoogleTasks.create_task(title="Test",due=datetime.datetime(year=2024,day=30,month=1),notes="")
+    GoogleTasks.create_task(
+        title="Test", due=datetime.datetime(year=2024, day=30, month=1), notes=""
+    )

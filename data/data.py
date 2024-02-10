@@ -1,7 +1,5 @@
-import MySQLdb
+import pyodbc
 from collections import namedtuple
-
-DATABASENAME = '`sql10462127`'
 
 class NamedTupleCursor:
     def __init__(self, cursor):
@@ -25,33 +23,38 @@ class Data():
 
     def __init__(self):
         self.cursor = None
-        self.db = None
+        self.conn = None
 
     def openConn(self):
         # Opens DB Connection
-        self.db = MySQLdb.connect(
-            host="localhost",
-            user="root",
-            passwd="3936107",
-            db="aifinance",
-            charset='utf8'
+        conn_str = (
+            "DRIVER={ODBC Driver 18 for SQL Server};"
+            "Server=tcp:database.windows.net,1433;"
+            "Database=ai-finance;"
+            "Uid=bruno98980;"
+            "Pwd=Br1to+98;"
+            "Encrypt=yes;"
+            "TrustServerCertificate=no;"
+            "Connection Timeout=30;"
         )
-        self.cursor = NamedTupleCursor(self.db.cursor())
+
+        self.conn = pyodbc.connect("Driver={ODBC Driver 18 for SQL Server};Server=tcp:ai-finance.database.windows.net,1433;Database=ai-finance;Uid=bruno98980;Pwd=Br1to+98;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;")
+        self.cursor = NamedTupleCursor(self.conn.cursor())
     
     def closeConn(self):
-        self.db.close()
+        self.conn.close()
 
     def insert(self, table, columns, values):
         self.openConn()
-        insert_many = True if (isinstance(values, list) and all(isinstance(elem, list) for elem in values)) else False
+        insert_many = isinstance(values, list) and all(isinstance(elem, list) for elem in values)
         if not insert_many:
             values = [values]
         inserted_ids = []
         for val in values:
-            query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({', '.join(['%s']*len(val))})"
+            query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({', '.join(['?']*len(val))})"
             self.cursor.execute(query, val)
-            inserted_ids.append(self.cursor.lastrowid)
-        self.db.commit()
+            self.conn.commit()
+            inserted_ids.append(self.cursor.execute("SELECT @@IDENTITY").fetchone()[0])
         self.closeConn()
         return inserted_ids if insert_many else inserted_ids[0]
 
@@ -71,14 +74,14 @@ class Data():
 
     def update(self, table, set_values, condition):
         self.openConn()
-        query = f"UPDATE {table} SET {', '.join([f'{col}=%s' for col in set_values.keys()])} WHERE {condition}"
+        query = f"UPDATE {table} SET {', '.join([f'{col}=?' for col in set_values.keys()])} WHERE {condition}"
         self.cursor.execute(query, list(set_values.values()))
-        self.db.commit()
+        self.conn.commit()
         self.closeConn()
 
     def delete(self, table, condition):
         self.openConn()
         query = f"DELETE FROM {table} WHERE {condition}"
         self.cursor.execute(query)
-        self.db.commit()
+        self.conn.commit()
         self.closeConn()

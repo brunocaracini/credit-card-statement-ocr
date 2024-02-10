@@ -56,7 +56,7 @@ class DataStatement(Data):
             INNER JOIN (
                 SELECT entity, MAX(year) AS max_year, MAX(month) AS max_month
                 FROM {self.TABLE_NAME}
-                WHERE id_user = %s
+                WHERE id_user = ?
                 GROUP BY entity
             ) t2 ON t1.entity = t2.entity AND t1.year = t2.max_year AND t1.month = t2.max_month;
         '''
@@ -84,8 +84,9 @@ class DataStatement(Data):
             FROM {self.TABLE_NAME} cs
             JOIN {DataCardStatement.TABLE_NAME} ccs 
                 on cs.id = ccs.id_statement
-            WHERE ccs.id_credit_card = %s
+            WHERE ccs.id_credit_card = ?
         '''
+        print(str(id_card))
         self.cursor.execute(query, (str(id_card),))
         return self.cursor.fetchall()
     

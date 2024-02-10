@@ -76,6 +76,9 @@ class OcrEngine:
     ):
         self.statement.bank = bank
         self.statement.entity = entity
+        items_set = ItemsSet(items=[])
+        taxes_got = False
+        previous_date = ""
 
         # Get pdf text
         text = (
@@ -83,20 +86,19 @@ class OcrEngine:
             if not pdf_content
             else self.extract_text_from_statement_pdf_in_memory(pdf_content=pdf_content)
         )
-        items_set = ItemsSet(items=[])
-        taxes_got = False
-        previous_date = ""
 
         for line in text.split("\n"):
-            
+
             self.list_splitted_item = list(
                 filter(lambda x: len(x) > 0, line.split(" "))
             )
-            
+
             # Dates extraction
             self.statement_dates += self.extract_statement_dates(entity=entity, bank=bank) 
             if bank.upper() == "SANTANDER":
                 self.statement_dates += self.extract_dates_visa_santander()
+            elif bank.upper() == "COINAG":
+                self.statement_dates += self.extract_dates_visa_coinag()
 
             # For MASTERCARD only: looking for taxes at the begining
             if entity == "MASTERCARD" and not taxes_got:
@@ -418,6 +420,19 @@ class OcrEngine:
             current_due_date = f'{matches.group(3)}-{matches.group(4)}'.replace(" ","-")
             return [('CURRENT_CLOSURE', current_closure_date), ('CURRENT_DUE_DATE', current_due_date)]
         return []
+    
+    def extract_dates_visa_coinag(self):
+        
+        text = ' '.join(self.list_splitted_item)
+        pattern = r'2000\s+ROSARIO\s+(\d+\s+\w+\s+\d+)'
+        
+        match = re.search(pattern, text)
+        
+        if match:
+            current_due_date = match.group(1).replace(" ","-")
+            return [('CURRENT_DUE_DATE', current_due_date)]
+        else:
+            return []
     
     @staticmethod
     def is_number(value):

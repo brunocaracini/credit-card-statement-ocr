@@ -1,18 +1,19 @@
+import os
 import datetime
+from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2 import service_account
 
+load_dotenv()
 
 class GoogleCalendar:
-    scopes = {
-        "calendar": "https://www.googleapis.com/auth/calendar",
-        "tasks": "https://www.googleapis.com/auth/tasks",
-    }
-    key_file_location = "credit-cards-automation-7034849bd49b.json"
+    # Authentication and scopes
+    scopes="https://www.googleapis.com/auth/calendar"
+    key_file_location = os.getenv("GOOGLE_CALENDAR_KEY_FILE_LOCATION")
 
-    TARGET_CALENDAR_ID = "107fbd898fc41bdbf7b8963f6733c79b2788293a64bc121c55a8a93f447ded4e@group.calendar.google.com"
-    TARGET_TASK_LIST_ID = "MDYxNDY1MjAzMTAyNTk3NTU5NTA6MDow"
+    # Targets
+    TARGET_CALENDAR_ID = os.getenv("GOOGLE_CALENDAR_TARGET_CALENDAR_ID")
 
     # Decorators:
 
@@ -22,21 +23,7 @@ class GoogleCalendar:
             service = GoogleCalendar._get_service(
                 api_name="calendar",
                 api_version="v3",
-                scopes=[GoogleCalendar.scopes.get("calendar")],
-                key_file_location=GoogleCalendar.key_file_location,
-            )
-            result = func(service, *args, **kwargs)
-            return result
-
-        return wrapper
-
-    def google_tasks_api_service_creator(func):
-        def wrapper(*args, **kwargs):
-            # Authenticates and constructs service.
-            service = GoogleCalendar._get_service(
-                api_name="tasks",
-                api_version="v1",
-                scopes=[GoogleCalendar.scopes.get("tasks")],
+                scopes=GoogleCalendar.scopes,
                 key_file_location=GoogleCalendar.key_file_location,
             )
             result = func(service, *args, **kwargs)
@@ -215,45 +202,3 @@ class GoogleCalendar:
             logger.error(f"An error occurred: {error}")
             return None
 
-    @staticmethod
-    @logging
-    @google_tasks_api_service_creator
-    def create_task(
-        service,
-        logger,
-        title: str,
-        notes: str,
-        due: datetime = None,
-        task_list_id: str = TARGET_TASK_LIST_ID,
-        assigned_email: str = None
-    ):
-        """Creates a task in the specified task list and assigns it to the given email."""
-
-        task = {
-            "title": title,
-            "notes": notes,
-            "due": due.isoformat() + "Z" if due else None,
-            "assignee": {"email": assigned_email}
-        }
-
-        try:
-            task = service.tasks().insert(tasklist=task_list_id, body=task).execute()
-            return task
-        except HttpError as error:
-            logger.error(f"An error occurred: {error}")
-            return None
-
-    @staticmethod
-    @logging
-    @google_tasks_api_service_creator
-    def get_task_lists(service, logger):
-        try:
-            task_lists = service.tasklists().list().execute()
-            return task_lists.get("items", [])
-        except HttpError as error:
-            logger.error(f"An error occurred while fetching task lists: {error}")
-            return None
-
-
-if __name__ == "__main__":
-    GoogleCalendar.create_task(title="Test",due=datetime.datetime(year=2024,day=30,month=1),notes="",assigned_email="bruno98980@gmail.com")

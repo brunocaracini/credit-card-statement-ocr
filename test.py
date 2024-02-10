@@ -3,7 +3,6 @@ import azure.functions as func
 from resources.logger import Logger
 from controllers import CardController, StatementController
 from submodules.google_drive_module.drive import GoogleDrive
-from calendar_lib import GoogleCalendar
 
 def statement_scanner() -> None:
     card_controller = CardController()
