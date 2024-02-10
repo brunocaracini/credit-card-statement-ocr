@@ -18,8 +18,8 @@ class GoogleTasks:
     access_token = None
     refresh_token = os.getenv("GOOGLE_CREDENTIALS_REFRESH_TOKEN")
 
-    # Targets
-    TARGET_TASK_LIST_ID = os.getenv("GOOGLE_TASKS_TARGET_TASK_LIST_ID")
+    # Config
+    TARGET_TASK_LIST_ID = os.getenv("GOOGLE_USER_CREDENTIALS_REFRESH_TOKEN")
 
     # Decorators:
 
@@ -89,10 +89,10 @@ class GoogleTasks:
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             payload = (
-                f"client_id={os.getenv('GOOGLE_CREDENTIALS_CLIENT_ID')}&"
-                f"client_secret={os.getenv('GOOGLE_CREDENTIALS_CLIENT_SECRET')}&"
-                f"refresh_token={os.getenv('GOOGLE_CREDENTIALS_REFRESH_TOKEN')}&"
-                f"grant_type={os.getenv('GOOGLE_CREDENTIALS_GRANT_TYPE')}"
+                f"client_id={os.getenv('GOOGLE_USER_CREDENTIALS_CLIENT_ID')}&"
+                f"client_secret={os.getenv('GOOGLE_USER_CREDENTIALS_CLIENT_SECRET')}&"
+                f"refresh_token={os.getenv('GOOGLE_USER_CREDENTIALS_REFRESH_TOKEN')}&"
+                f"grant_type={os.getenv('GOOGLE_USER_CREDENTIALS_GRANT_TYPE')}"
             )
             headers = {"Content-Type": "application/x-www-form-urlencoded"}
 

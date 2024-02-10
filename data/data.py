@@ -1,3 +1,4 @@
+import os
 import pyodbc
 from collections import namedtuple
 
@@ -28,17 +29,17 @@ class Data():
     def openConn(self):
         # Opens DB Connection
         conn_str = (
-            "DRIVER={ODBC Driver 18 for SQL Server};"
-            "Server=tcp:database.windows.net,1433;"
-            "Database=ai-finance;"
-            "Uid=bruno98980;"
-            "Pwd=Br1to+98;"
+            f"DRIVER={os.getenv('DATABASE_DRIVER')};"
+            f"Server={os.getenv('DATABASE_SERVER')},{os.getenv('DATABASE_PORT')};"
+            f"Database={os.getenv('DATABASE_NAME')};"
+            f"Uid={os.getenv('DATABASE_USER')};"
+            f"Pwd={os.getenv('DATABASE_PASSWORD')};"
             "Encrypt=yes;"
             "TrustServerCertificate=no;"
-            "Connection Timeout=30;"
+            f"Connection Timeout={os.getenv('DATABASE_TIMEOUT')};"
         )
 
-        self.conn = pyodbc.connect("Driver={ODBC Driver 18 for SQL Server};Server=tcp:ai-finance.database.windows.net,1433;Database=ai-finance;Uid=bruno98980;Pwd=Br1to+98;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;")
+        self.conn = pyodbc.connect(conn_str)
         self.cursor = NamedTupleCursor(self.conn.cursor())
     
     def closeConn(self):

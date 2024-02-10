@@ -1,9 +1,13 @@
 import re
+import os
+from dotenv import load_dotenv
 import azure.functions as func
 from resources.logger import Logger
 from controllers import CardController, StatementController
 from submodules.google_drive_module.drive import GoogleDrive
 
+if not os.getenv("ENVIRONMENT_NAME"):
+    load_dotenv()
 
 app = func.FunctionApp()
 

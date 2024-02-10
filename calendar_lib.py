@@ -9,11 +9,15 @@ load_dotenv()
 
 class GoogleCalendar:
     # Authentication and scopes
-    scopes="https://www.googleapis.com/auth/calendar"
+    scopes = {
+        "calendar": "https://www.googleapis.com/auth/calendar",
+        "tasks": "https://www.googleapis.com/auth/tasks",
+    }
     key_file_location = os.getenv("GOOGLE_CALENDAR_KEY_FILE_LOCATION")
 
-    # Targets
+    # Config
     TARGET_CALENDAR_ID = os.getenv("GOOGLE_CALENDAR_TARGET_CALENDAR_ID")
+    TARGET_TASK_LIST_ID = None
 
     # Decorators:
 
@@ -23,7 +27,21 @@ class GoogleCalendar:
             service = GoogleCalendar._get_service(
                 api_name="calendar",
                 api_version="v3",
-                scopes=GoogleCalendar.scopes,
+                scopes=[GoogleCalendar.scopes.get("calendar")],
+                key_file_location=GoogleCalendar.key_file_location,
+            )
+            result = func(service, *args, **kwargs)
+            return result
+
+        return wrapper
+
+    def google_tasks_api_service_creator(func):
+        def wrapper(*args, **kwargs):
+            # Authenticates and constructs service.
+            service = GoogleCalendar._get_service(
+                api_name="tasks",
+                api_version="v1",
+                scopes=[GoogleCalendar.scopes.get("tasks")],
                 key_file_location=GoogleCalendar.key_file_location,
             )
             result = func(service, *args, **kwargs)
@@ -98,7 +116,6 @@ class GoogleCalendar:
         try:
             calendar_list = service.calendarList().list().execute()
             calendar_ids = [calendar["id"] for calendar in calendar_list["items"]]
-            print(calendar_ids)
             return calendar_ids
         except HttpError as error:
             logger.error(f"An error occurred: {error}")
@@ -119,7 +136,7 @@ class GoogleCalendar:
     @logging
     @google_calendar_api_service_creator
     def get_events_for_calendar(
-        service, logger, calendar_id: str, future_events_only: bool = False
+        service, logger, calendar_id: str, max_results: int = None, future_events_only: bool = False
     ):
         """Retrieves events from the specified calendar.
 
@@ -138,7 +155,7 @@ class GoogleCalendar:
                 .list(
                     calendarId=calendar_id,
                     timeMin=now if future_events_only else None,
-                    maxResults=10,  # Adjust maxResults as needed
+                    maxResults=max_results,
                     singleEvents=True,
                     orderBy="startTime",
                 )
@@ -201,4 +218,74 @@ class GoogleCalendar:
         except HttpError as error:
             logger.error(f"An error occurred: {error}")
             return None
+
+    @staticmethod
+    @logging
+    @google_tasks_api_service_creator
+    def create_task(
+        service,
+        logger,
+        title: str,
+        notes: str,
+        due: datetime = None,
+        task_list_id: str = TARGET_TASK_LIST_ID,
+        assigned_email: str = None
+    ):
+        """Creates a task in the specified task list and assigns it to the given email."""
+
+        task = {
+            "title": title,
+            "notes": notes,
+            "due": due.isoformat() + "Z" if due else None,
+            "assignee": {"email": assigned_email}
+        }
+
+        try:
+            task = service.tasks().insert(tasklist=task_list_id, body=task).execute()
+            return task
+        except HttpError as error:
+            logger.error(f"An error occurred: {error}")
+            return None
+
+    @staticmethod
+    @logging
+    @google_tasks_api_service_creator
+    def get_task_lists(service, logger):
+        try:
+            task_lists = service.tasklists().list().execute()
+            return task_lists.get("items", [])
+        except HttpError as error:
+            logger.error(f"An error occurred while fetching task lists: {error}")
+            return None
+        
+    @staticmethod
+    @logging
+    @google_calendar_api_service_creator
+    def remove_all_events_from_calendar(service, logger, calendar_id: str = TARGET_CALENDAR_ID):
+        """Removes all events from the specified calendar.
+
+        Args:
+            service: Authenticated service instance of the Google API Client.
+            calendar_id: The ID of the calendar to remove events from.
+
+        Returns:
+            True if all events are successfully removed, False otherwise.
+        """
+        try:
+            # Retrieve all events from the calendar
+            events = GoogleCalendar.get_events_for_calendar(calendar_id=calendar_id)
+
+            if events is not None:
+                # Iterate over each event and delete it
+                for event in events:
+                    service.events().delete(calendarId=calendar_id, eventId=event['id']).execute()
+
+                logger.info("All events removed from the calendar.")
+                return True
+            else:
+                logger.error("Failed to retrieve events from the calendar.")
+                return False
+        except HttpError as error:
+            logger.error(f"An error occurred: {error}")
+            return False
 
