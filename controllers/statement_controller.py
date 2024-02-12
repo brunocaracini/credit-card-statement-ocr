@@ -1,9 +1,9 @@
 import locale
 from resources.logger import Logger
 from classes.Statement import Statement
-from calendar_lib import GoogleCalendar
-from tasks_lib import GoogleTasks
 from libraries.ocr_engine import OcrEngine
+from tasks_lib import GoogleTasks
+from submodules.google_calendar_module.calendar import GoogleCalendar
 from data import DataItem, DataItemSet, DataStatement, DataCardStatement
 
 
