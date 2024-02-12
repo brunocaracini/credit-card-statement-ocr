@@ -16,7 +16,7 @@ app = func.FunctionApp()
 
 # Functions
 @app.schedule(
-    schedule="*/30 * * * * *",
+    schedule="0 0 17 * * *",
     arg_name="myTimer",
     run_on_startup=True,
     use_monitor=False,
