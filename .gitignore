@@ -138,3 +138,5 @@ __azurite_db*__.json
 *.pdf
 *.xlsx
 credit-cards-automation-7034849bd49b.json
+token.json
+credentials.json

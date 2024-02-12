@@ -1,15 +1,15 @@
 import re
 import os
 from dotenv import load_dotenv
-import azure.functions as func
 from resources.logger import Logger
 from controllers import CardController, StatementController
-from submodules.google_drive_module.drive import GoogleDrive
+from submodules.google_drive_module.google_drive import GoogleDrive
 
 ENVIRONMENT_NAME = os.getenv("ENVIRONMENT_NAME")
 if not ENVIRONMENT_NAME or ENVIRONMENT_NAME.lower() == "local":
     load_dotenv()
     print("Running in LOCAL environment")
+
 
 def statement_scanner() -> None:
     card_controller = CardController()
@@ -23,6 +23,7 @@ def statement_scanner() -> None:
     ]
 
     logger.info("Python timer trigger function has successfully finished.")
+
 
 def process_card_statement(card, logger, statement_controller):
     logger.info("-" * 80)
@@ -46,7 +47,9 @@ def process_card_statement(card, logger, statement_controller):
         year, month = map(
             int, re.search(r"(\d{4})-(\d{2})\.pdf", file["name"]).groups()
         )
-        logger.info(f'Processing statement for {str(year)}-{str(month)} for {card.entity} - {card.bank}')
+        logger.info(
+            f"Processing statement for {str(year)}-{str(month)} for {card.entity} - {card.bank}"
+        )
         statement = statement_controller.insert_with_ocr(
             file=GoogleDrive.download_file_content_bytes_by_id(file_id=file["id"]),
             bank=card.bank,
@@ -67,11 +70,18 @@ def process_card_statement(card, logger, statement_controller):
             statement=statement, bank=card.bank, entity=card.entity
         )
 
-        logger.info(f'Statement for {str(year)}-{str(month)} for {card.entity} - {card.bank} has been successfuly processed')
+        logger.info(
+            f"Statement for {str(year)}-{str(month)} for {card.entity} - {card.bank} has been successfuly processed"
+        )
 
-    logger.info("-" * 80) if new_statements else logger.info(
-        f"All statements have been processed for {card.bank} - {card.entity}"
+    (
+        logger.info("-" * 80)
+        if new_statements
+        else logger.info(
+            f"All statements have been processed for {card.bank} - {card.entity}"
+        )
     )
+
 
 if __name__ == "__main__":
     statement_scanner()

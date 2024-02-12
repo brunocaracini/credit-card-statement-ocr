@@ -9,6 +9,7 @@ from submodules.google_drive_module.google_drive import GoogleDrive
 ENVIRONMENT_NAME = os.getenv("ENVIRONMENT_NAME")
 if not ENVIRONMENT_NAME or ENVIRONMENT_NAME.lower() == "local":
     load_dotenv()
+    print("Running in LOCAL environment")
 
 app = func.FunctionApp()
 
@@ -57,6 +58,9 @@ def process_card_statement(card, logger, statement_controller):
         year, month = map(
             int, re.search(r"(\d{4})-(\d{2})\.pdf", file["name"]).groups()
         )
+        logger.info(
+            f"Processing statement for {str(year)}-{str(month)} for {card.entity} - {card.bank}"
+        )
         statement = statement_controller.insert_with_ocr(
             file=GoogleDrive.download_file_content_bytes_by_id(file_id=file["id"]),
             bank=card.bank,
@@ -75,6 +79,10 @@ def process_card_statement(card, logger, statement_controller):
 
         statement_controller.create_calendar_event_next_dates(
             statement=statement, bank=card.bank, entity=card.entity
+        )
+
+        logger.info(
+            f"Statement for {str(year)}-{str(month)} for {card.entity} - {card.bank} has been successfuly processed"
         )
 
     (
