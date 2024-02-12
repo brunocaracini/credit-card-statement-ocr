@@ -84,6 +84,7 @@ class Statement():
     #Updates
     def remove_empty_item_sets(self):
         self.items_sets = [item_set for item_set in self.items_sets if len(item_set.items) > 0]
+        
     
     def _translate_month_name(self, month):
         return {"January": "Enero", "February": "Febrero", "March": "Marzo", "April": "Abril", "May": "Mayo", "June": "Junio", "July": "Julio", "August": "Agosto", "September": "Septiembre", "October": "Octubre", "November": "Noviembre", "December": "Diciembre"}.get(calendar.month_name[month].title(), None)

@@ -1,16 +1,16 @@
 from libraries.ocr_engine import OcrEngine
 from controllers.statement_controller import StatementController, OcrEngine
-from submodules.google_drive_module.drive import GoogleDrive
+from submodules.google_drive_module.google_drive import GoogleDrive
 import os
 
 
 statement_controller = StatementController()
-file = GoogleDrive.download_file_by_id("10tsSxQIgoJnP9zKLFbpEFSXoUGEA7e3X")
+file = GoogleDrive.download_file_by_id("1W_PBV2Lz9_yi-uLM5g-3GJfARsoJtxj9")
 ocr = OcrEngine()
 
 ocr.statement_orc_scanner(
-    bank="HSBC",
-    entity="MASTERCARD",
+    bank="VISA",
+    entity="Coinag",
     pdf_content=file
 )
 

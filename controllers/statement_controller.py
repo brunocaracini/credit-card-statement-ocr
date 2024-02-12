@@ -1,9 +1,11 @@
 import locale
+from classes.Item import Item
 from resources.logger import Logger
+from classes.ItemsSet import ItemsSet
 from classes.Statement import Statement
 from libraries.ocr_engine import OcrEngine
 from tasks_lib import GoogleTasks
-from submodules.google_calendar_module.calendar import GoogleCalendar
+from submodules.google_calendar_module.google_calendar import GoogleCalendar
 from data import DataItem, DataItemSet, DataStatement, DataCardStatement
 
 
@@ -130,6 +132,16 @@ class StatementController(DataStatement):
         )
 
         statement.remove_empty_item_sets()
+        if all(item.type != "taxes" for item in statement.items_sets):
+            item_set = ItemsSet(
+                type="taxes"
+            )
+            item_set.append_item(item=Item(
+                concept="Compensatory concept for $0 taxes statement",
+                ars_amount=0,
+                type="taxes"
+            ))
+            statement.items_sets += item_set
         statement.id = self.insert(statement=statement, id_user=id_user)
         self.logger.info("Statement properties set successfully")
         return statement
