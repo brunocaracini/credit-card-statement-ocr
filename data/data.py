@@ -29,7 +29,7 @@ class Data():
     def openConn(self):
         # Opens DB Connection
         conn_str = (
-            f"DRIVER={os.getenv('DATABASE_DRIVER')};"
+            f"DRIVER={{{os.getenv('DATABASE_DRIVER')}}};"
             f"Server={os.getenv('DATABASE_SERVER')},{os.getenv('DATABASE_PORT')};"
             f"Database={os.getenv('DATABASE_NAME')};"
             f"Uid={os.getenv('DATABASE_USER')};"

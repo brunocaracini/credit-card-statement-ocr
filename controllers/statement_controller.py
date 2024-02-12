@@ -1,4 +1,5 @@
 import locale
+from resources.logger import Logger
 from classes.Statement import Statement
 from calendar_lib import GoogleCalendar
 from tasks_lib import GoogleTasks
@@ -11,11 +12,18 @@ class StatementController(DataStatement):
         self.data_item = DataItem()
         self.data_item_set = DataItemSet()
         self.data_card_statement = DataCardStatement()
+        self.logger = Logger.get_logger(name="Statement Controller")
 
     def get_all(self):
+        self.logger.info("Fetching all statements")
         return super().get_all()
 
+    def get_by_id_card(self, id_card: int):
+        self.logger.info(f"Fetching statement by card ID {id_card}")
+        return super().get_by_id_card(id_card)
+
     def get_latests(self, id_user: int | str):
+        self.logger.info(f"Fetching latest statements for user {id_user}")
         statements = super().get_latests(id_user=id_user)
         for s in statements:
             s.items_sets = self.data_item_set.get_by_statement(id_statement=s.id)
@@ -24,12 +32,18 @@ class StatementController(DataStatement):
         return statements
 
     def insert(self, statement: Statement, id_user: int):
-        return super().insert(statement=statement, id_user=id_user)
+        self.logger.info(f"Inserting new statement for user {id_user}")
+        result = super().insert(statement=statement, id_user=id_user)
+        self.logger.info("Statement inserted successfully")
+        return result
 
     def update(self, statement: Statement):
-        return super().update(
+        self.logger.info(f"Updating statement with ID {statement.id}")
+        result = super().update(
             statement=statement,
         )
+        self.logger.info("Statement updated successfully")
+        return result
 
     def insert_with_ocr(
         self,
@@ -44,6 +58,7 @@ class StatementController(DataStatement):
         id_credit_cards: int | list[int] = None,
         csv_export: bool = False,
     ):
+        self.logger.info("Inserting statement using OCR")
         statement = self.process_ocr(file=file, entity=entity, bank=bank)
         statement = self.set_statement_properties(
             statement=statement,
@@ -58,13 +73,19 @@ class StatementController(DataStatement):
             self.insert_statement_related_data(
                 statement=statement, csv_export=csv_export
             )
+            self.logger.info("Statement inserted successfully")
         except Exception as e:
-            print(f"Error while inserting data of statement with ID {statement.id}")
+            self.logger.error(f"Error while inserting data of statement with ID {statement.id}")
+            self.logger.error(f"Reason of the error: {str(e)}")
+            self.logger.info("Changing the status of the statement to unprocessed")
             statement.is_processed = 0
             self.update(statement=statement)
+            self.logger.info("Status of the statement has been successfully set to unprocessed")
+            raise e
         return statement
 
     def process_ocr(self, file, entity: str, bank: str):
+        self.logger.info("Processing OCR")
         ocr = OcrEngine()
         if (
             entity.lower() == "visa"
@@ -87,6 +108,7 @@ class StatementController(DataStatement):
         drive_id: str,
         id_credit_cards: int | list[int] = None,
     ):
+        self.logger.info("Setting statement properties")
         properties_to_set = {
             "year": year,
             "month": month,
@@ -97,6 +119,7 @@ class StatementController(DataStatement):
 
         for property_name, value in properties_to_set.items():
             setattr(statement, property_name, value)
+        statement.month_name = statement._translate_month_name(month=month)
 
         statement.id_credit_cards = (
             id_credit_cards
@@ -108,26 +131,29 @@ class StatementController(DataStatement):
 
         statement.remove_empty_item_sets()
         statement.id = self.insert(statement=statement, id_user=id_user)
+        self.logger.info("Statement properties set successfully")
         return statement
 
     def insert_statement_related_data(
         self, statement: Statement, csv_export: bool = False
     ):
+        self.logger.info("Inserting statement related data")
         for id_credit_card in statement.id_credit_cards:
             self.data_card_statement.insert(
                 id_credit_card=id_credit_card, id_statement=statement.id
             )
 
         statement.print_all_items()
-        item_set_ids = self.data_item_set.insert_many(
-            items_sets=statement.items_sets, id_credit_card_statement=statement.id
-        )
+        if len(statement.items_sets) > 0:
+            item_set_ids = self.data_item_set.insert_many(
+                items_sets=statement.items_sets, id_credit_card_statement=statement.id
+            )
 
-        for i, itemset in enumerate(statement.items_sets):
-            itemset.__setattr__("id", item_set_ids[i])
-
-        for item_set in statement.items_sets:
-            self.data_item.insert_many(items=item_set.items, id_item_set=item_set.id)
+            for i, itemset in enumerate(statement.items_sets):
+                itemset.__setattr__("id", item_set_ids[i])
+            
+            for item_set in statement.items_sets:
+                self.data_item.insert_many(items=item_set.items, id_item_set=item_set.id)
 
         if csv_export:
             self.data_item.export_to_excel(
@@ -135,13 +161,12 @@ class StatementController(DataStatement):
                     item for item_set in statement.items_sets for item in item_set.items
                 ]
             )
-
-    def get_by_id_card(self, id_card: int):
-        return super().get_by_id_card(id_card)
+        self.logger.info("Statement related data inserted successfully")
 
     def create_calendar_task_current_due(
         self, statement: Statement, entity: str, bank: str
     ):
+        self.logger.info("Creating calendar task for current due date")
         locale.setlocale(locale.LC_NUMERIC, 'es_AR')
         formatted_ars = locale.format_string("%.2f", statement.ars_total_amount, grouping=True)
         formatted_usd = locale.format_string("%.2f", statement.usd_total_amount, grouping=True)
@@ -156,32 +181,36 @@ class StatementController(DataStatement):
                 notes=description,
                 due=statement.current_due_date
             )
+            self.logger.info("Calendar task for current due date created successfully")
         except Exception as error:
-            raise error
-            print("Error while creating the calendar task")
+            self.logger.error("Error while creating the Google Tasks task")
+            self.logger.error(f"Error details: {str(error)}")
 
     def create_calendar_event_next_dates(
         self, statement: Statement, entity: str, bank: str
     ):
+        self.logger.info("Creating calendar events for next closure and due dates")
         summary_closure = f"Cierre {entity} {bank}"
         description_closure = f"El resumen tarjeta {entity} {bank} del mes de {statement.month_name} cierra el {statement.next_closure.strftime('%d/%m/%Y')}"
 
         summary_due = f"Vencimiento {entity} {bank}"
         description_due = f"El resumen tarjeta {entity} {bank} del mes de {statement.month_name} vence el {statement.next_due_date.strftime('%d/%m/%Y')}"
         try:
-           GoogleCalendar.create_event(
+            GoogleCalendar.create_event(
                 all_day=True,
                 start=statement.next_closure,
                 end=statement.next_closure,
                 summary=summary_closure,
                 description=description_closure
             )
-           GoogleCalendar.create_event(
+            GoogleCalendar.create_event(
                 all_day=True,
                 start=statement.next_due_date,
                 end=statement.next_due_date,
                 summary=summary_due,
                 description=description_due
             )
-        except:
-            print("Error while creating the calendar event")
+            self.logger.info("Calendar events for next closure and due dates created successfully")
+        except Exception as error:
+            self.logger.error("Error while creating the Google Calendar event")
+            self.logger.error(f"Error details: {str(error)}")

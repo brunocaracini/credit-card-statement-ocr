@@ -11,11 +11,11 @@ class ItemsSet:
     """
 
     def __init__(self,items=[],card=None,type='buy',id=None,total_ars_amount=0):
-        self._id = id
-        self._items = items
-        self._card = card
-        self._total_ars_amount = total_ars_amount
-        self._type = type
+        self.id = id
+        self.items = items
+        self.card = card
+        self.total_ars_amount = total_ars_amount
+        self.type = type
 
     def __str__(self) -> str:
         return f"""
@@ -27,55 +27,16 @@ class ItemsSet:
                 Type: {self.type}
             """  
 
-    #Getters
-    @property       
-    def id(self):
-        return self._id
-
-    @property       
-    def items(self):
-        return self._items
-    @property
-    def card(self):
-        return self._card
-    @property
-    def total_ars_amount(self):
-        return self._total_ars_amount
-    @property
-    def type(self):
-        return self._type
-
-    #Setters
-    @id.setter
-    def id(self,id):
-        self._id = id
-
-    @items.setter
-    def items(self,items):
-        self._items = items
-
-    @card.setter
-    def card(self,card):
-        self._card = card
-
-    @total_ars_amount.setter
-    def total_ars_amount(self,total_ars_amount):
-        self._total_ars_amount = total_ars_amount
-    
-    @type.setter
-    def type(self,type):
-        self._type = type
-
     #Appends
     def append_item(self,item):
-        self._items.append(item)
+        self.items.append(item)
 
     #Calculations
     def calc_total_amount_ars(self,ret=False):
-        return round(sum([item.ars_amount for item in self.items if item.ars_amount]),2)
+        return round(sum([item.ars_amount for item in self.items if item.ars_amount]),2) if self.items else 0
     
     def calc_total_amount_usd(self,ret=False):
-        return round(sum([item.usd_amount for item in self.items if item.usd_amount]),2)
+        return round(sum([item.usd_amount for item in self.items if item.usd_amount]),2) if self.items else 0
 
     def get_items_count(self):
         return len(self.items)

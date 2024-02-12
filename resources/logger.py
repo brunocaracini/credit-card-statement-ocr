@@ -7,17 +7,19 @@ class Logger:
         logger = logging.getLogger(name)
         logger.setLevel(logging.INFO)
 
-        # Create a console handler
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.INFO)
+        # Check if handler already exists
+        if not logger.handlers:
+            # Create a console handler
+            handler = logging.StreamHandler()
+            handler.setLevel(logging.INFO)
 
-        # Create a formatter
-        formatter = logging.Formatter(
-            "%(name)s - %(asctime)s - %(levelname)s - %(message)s"
-        )
-        handler.setFormatter(formatter)
+            # Create a formatter
+            formatter = logging.Formatter(
+                "%(name)s - %(asctime)s - %(levelname)s - %(message)s"
+            )
+            handler.setFormatter(formatter)
 
-        # Add the handler to the logger
-        logger.addHandler(handler)
+            # Add the handler to the logger
+            logger.addHandler(handler)
 
         return logger

@@ -96,7 +96,8 @@ class DataStatement(Data):
         return super().insert(self.TABLE_NAME, columns, values)
     
     def update(self, statement: Statement):
-        values = [getattr(statement, col) for col in self.COLUMNS if getattr(statement, col)]
-        columns = [col for col in self.COLUMNS if getattr(statement, col)]
+        values = [getattr(statement, col) for col in self.COLUMNS if getattr(statement, col) and col != 'id']
+        columns = [col for col in self.COLUMNS if getattr(statement, col) and col != 'id']
         return super().update(self.TABLE_NAME, set_values=dict(zip(columns, values)), condition=f"id={statement.id}")
+
 

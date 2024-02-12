@@ -1,7 +1,6 @@
 """
    IMPORTS
 """
-from os import remove
 import io
 import re
 import pdfplumber
@@ -88,7 +87,6 @@ class OcrEngine:
         )
 
         for line in text.split("\n"):
-
             self.list_splitted_item = list(
                 filter(lambda x: len(x) > 0, line.split(" "))
             )
@@ -102,16 +100,15 @@ class OcrEngine:
 
             # For MASTERCARD only: looking for taxes at the begining
             if entity == "MASTERCARD" and not taxes_got:
-                taxes_items_set = ItemsSet(items=[])
-
+                taxes_items_set = ItemsSet(items=[], type="taxes")
                 if self.is_tax() and not self.filter_tax_by_amount():
+                    print(self.list_splitted_item)
                     ars_amount = self.extract_ars_amount()
                     concept = self.extract_concept()
                     item = Item(concept=concept, ars_amount=ars_amount, type="taxes")
                     taxes_items_set.append_item(item)
 
                 if len(taxes_items_set.items) > 0:
-                    taxes_items_set.type = "taxes"
                     self.statement.append_items_set(taxes_items_set)
 
             if any(x in line.upper() for x in getattr(self, "CARD_TOTAL")):
@@ -139,7 +136,7 @@ class OcrEngine:
                 and self.is_valid_line(line)
                 and not self.is_multi_date_line()
             ):
-                taxes_got = True
+                taxes_got = False
                 previous_date = date
                 quote = self.extract_quote()
                 receipt = self.exctract_receipt(entity=entity)
@@ -173,7 +170,6 @@ class OcrEngine:
 
                 items_set.append_item(item)
 
-        print(self.extract_variables_as_dict())
         self.statement.set_date_fields_from_dict(
             date_dict=self.extract_variables_as_dict()
         )
@@ -477,11 +473,14 @@ class OcrEngine:
     def convert_to_datetime(date_str):
         month_mapping = {
                 'Ene': 1, 'Feb': 2, 'Mar': 3, 'Abr': 4, 'May': 5, 'Jun': 6,
-                'Jul': 7, 'Ago': 8, 'Sep': 9, 'Set': 9, 'Oct': 10, 'Nov': 11, 'Dic': 12
+                'Jul': 7, 'Ago': 8, 'Sep': 9, 'Set': 9, 'Oct': 10, 'Nov': 11, 'Dic': 12,
+                'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6,
+                'Julio': 7, 'Agosto': 8, 'Septiembre': 9, 'Setiembre': 9, 'Octubre': 10, 
+                'Noviembre': 11, 'Diciembre': 12
         }
 
         day, month_str, year = date_str.split('-')
-        month = month_mapping.get(month_str)
+        month = month_mapping.get(month_str.title())
 
         # Convert two-digit year to four-digit year
         if len(year) == 2:

@@ -1,4 +1,5 @@
 import os
+import logging
 import requests
 import datetime
 from dotenv import load_dotenv
@@ -16,10 +17,10 @@ class GoogleTasks:
     scope = "https://www.googleapis.com/auth/tasks"
     oauth_endpoint = "https://oauth2.googleapis.com/token"
     access_token = None
-    refresh_token = os.getenv("GOOGLE_CREDENTIALS_REFRESH_TOKEN")
+    refresh_token = os.getenv("GOOGLE_USER_CREDENTIALS_REFRESH_TOKEN")
 
     # Config
-    TARGET_TASK_LIST_ID = os.getenv("GOOGLE_USER_CREDENTIALS_REFRESH_TOKEN")
+    TARGET_TASK_LIST_ID = os.getenv("GOOGLE_TASKS_TARGET_TASK_LIST_ID")
 
     # Decorators:
 
@@ -39,28 +40,24 @@ class GoogleTasks:
     def logging(func):
         def wrapper(*args, **kwargs):
             # Authenticates and constructs service.
-            import logging
-
             # Set up the logger
             logger = logging.getLogger("Google Tasks Module")
             logger.setLevel(logging.INFO)
 
-            # Create a file handler
-            """handler = logging.FileHandler('mylogfile.log')
-            handler.setLevel(logging.INFO)"""
+            # Check if handler already exists
+            if not logger.handlers:
+                # Create a console handler
+                handler = logging.StreamHandler()
+                handler.setLevel(logging.INFO)
 
-            # Create a console handler
-            handler = logging.StreamHandler()
-            handler.setLevel(logging.INFO)
+                # Create a formatter
+                formatter = logging.Formatter(
+                    "%(name)s - %(asctime)s - %(levelname)s - %(message)s"
+                )
+                handler.setFormatter(formatter)
 
-            # Create a formatter
-            formatter = logging.Formatter(
-                "%(name)s - %(asctime)s - %(levelname)s - %(message)s"
-            )
-            handler.setFormatter(formatter)
-
-            # Add the handler to the logger
-            logger.addHandler(handler)
+                # Add the handler to the logger
+                logger.addHandler(handler)
             result = func(logger, *args, **kwargs)
             return result
 
