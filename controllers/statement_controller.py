@@ -141,7 +141,7 @@ class StatementController(DataStatement):
                 ars_amount=0,
                 type="taxes"
             ))
-            statement.items_sets += item_set
+            statement.append_items_set(item_set)
         statement.id = self.insert(statement=statement, id_user=id_user)
         self.logger.info("Statement properties set successfully")
         return statement
