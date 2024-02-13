@@ -1,12 +1,12 @@
-import locale
 from classes.Item import Item
 from resources.logger import Logger
 from classes.ItemsSet import ItemsSet
 from classes.Statement import Statement
+from babel.numbers import format_currency
 from libraries.ocr_engine import OcrEngine
 from tasks_lib import GoogleTasks
-from submodules.google_calendar_module.google_calendar import GoogleCalendar
 from data import DataItem, DataItemSet, DataStatement, DataCardStatement
+from submodules.google_calendar_module.google_calendar import GoogleCalendar
 
 
 class StatementController(DataStatement):
@@ -179,10 +179,12 @@ class StatementController(DataStatement):
         self, statement: Statement, entity: str, bank: str
     ):
         self.logger.info("Creating calendar task for current due date")
-        locale.setlocale(locale.LC_NUMERIC, 'es_AR')
-        formatted_ars = locale.format_string("%.2f", statement.ars_total_amount, grouping=True)
-        formatted_usd = locale.format_string("%.2f", statement.usd_total_amount, grouping=True)
-        summary = f"Pagar {entity} {bank} - Total de ${str(formatted_ars)} ARS + ${str(formatted_usd)} USD"
+
+        locale = 'es_AR'
+        formatted_ars = format_currency(statement.ars_total_amount, 'ARS', locale=locale)
+        formatted_usd = format_currency(statement.usd_total_amount, 'USD', locale=locale)
+
+        summary = f"Pagar {entity} {bank} - Total de {str(formatted_ars)} ARS + {str(formatted_usd)} USD"
         description = f"""El resumen tarjeta {entity} {bank} del mes de {statement.month_name} con cierre el {statement.current_closure.strftime('%d/%m/%Y')} vence este día.\n\nEl total a pagar es de:
             - ${str(formatted_ars)} ARS
             - ${str(formatted_usd)} USD
