@@ -1,6 +1,7 @@
 """
    IMPORTS
 """
+
 import io
 import re
 import pdfplumber
@@ -21,6 +22,7 @@ class OcrEngine:
     # Regexs
     DATE_REGEX = [
         ".*?^([0-9][0-9](/|-)[0-9][0-9](/|-)[0-9][0-9])$.*",
+        r"^(([0-2][0-9])|([3][0-1]))/((0[1-9])|(1[0-2]))/\d{4}$",
         ".*?^([0-9][0-9](/|-|\.)[0-9][0-9](/|-|\.)[0-9][0-9])$.*",
         "^(([0-9])|([0][0-9])|([1-2][0-9])|([3][0-1]))\-(Ene|Feb|Mar|Apr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)\-\d{2}$",
         "^(([0-9])|([0][0-9])|([1-2][0-9])|([3][0-1]))\-(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiem.|Octubre|Noviem.|Diciem.)\-\d{2}$",
@@ -53,20 +55,48 @@ class OcrEngine:
     # Invalid Line values
     INVALID_LINES = ["SU PAGO EN PESOS", "SU PAGO", "TNA", "SALDO ANTERIOR"]
 
-    #Statement dates
+    # Statement dates
     STATEMENT_DATES = {
-        "CURRENT_DUE_DATE": ["VENCIMIENTOACTUAL", "VTOACTUAL", "VTO.ACTUAL", "VENCIMIENTOACTUAL:","VTO.ACTUAL"],
-        "NEXT_DUE_DATE": ["PROXIMOVENCIMIENTO", "PROXIMOVTO", "PROXIMOVTO.","PROXIMOVTO.:", "PROXIMOVENCIMIENTO:","PROXIMOVTO:", "PROX.VTO","PROX.VTO.","PROX.VTO.:"],
-        "CURRENT_CLOSURE": ["CIERREACTUAL","CIERREACTUAL:", "CUENTAAL", "CUENTAAL:"],
-        "NEXT_CLOSURE": ["PROXIMOCIERRE", "PROXIMOCIERRE:", "PROX.CIERRE","PROX.CIERRE.","PROX.CIERRE:"]
+        "CURRENT_DUE_DATE": [
+            "VENCIMIENTOACTUAL",
+            "VTOACTUAL",
+            "VTO.ACTUAL",
+            "VENCIMIENTOACTUAL:",
+            "VTO.ACTUAL",
+        ],
+        "NEXT_DUE_DATE": [
+            "PROXIMOVENCIMIENTO",
+            "PROXIMOVTO",
+            "PROXIMOVTO.",
+            "PROXIMOVTO.:",
+            "PROXIMOVENCIMIENTO:",
+            "PROXIMOVTO:",
+            "PROX.VTO",
+            "PROX.VTO.",
+            "PROX.VTO.:",
+        ],
+        "CURRENT_CLOSURE": ["CIERREACTUAL", "CIERREACTUAL:", "CUENTAAL", "CUENTAAL:"],
+        "NEXT_CLOSURE": [
+            "PROXIMOCIERRE",
+            "PROXIMOCIERRE:",
+            "PROX.CIERRE",
+            "PROX.CIERRE.",
+            "PROX.CIERRE:",
+        ],
     }
 
     # Values
     IVA_VALUE = 0.21
 
-
     def __init__(self):
-        self.statement = Statement(items_sets=[], is_processed=0, current_closure=None, current_due_date=None, next_closure=None, next_due_date=None)
+        self.statement = Statement(
+            items_sets=[],
+            is_processed=0,
+            current_closure=None,
+            current_due_date=None,
+            next_closure=None,
+            next_due_date=None,
+        )
         self.list_splitted_item = []
         self.statement_dates = []
 
@@ -92,7 +122,9 @@ class OcrEngine:
             )
 
             # Dates extraction
-            self.statement_dates += self.extract_statement_dates(entity=entity, bank=bank) 
+            self.statement_dates += self.extract_statement_dates(
+                entity=entity, bank=bank
+            )
             if bank.upper() == "SANTANDER":
                 self.statement_dates += self.extract_dates_visa_santander()
             elif bank.upper() == "COINAG":
@@ -120,9 +152,11 @@ class OcrEngine:
                         last_four_numbers=self.extract_last_four_numbers(),
                     )
                     if entity == "VISA"
-                    else Card(entity=entity, bank=bank)
-                    if entity == "MASTERCARD"
-                    else None
+                    else (
+                        Card(entity=entity, bank=bank)
+                        if entity == "MASTERCARD"
+                        else None
+                    )
                 )
                 self.statement.append_items_set(items_set)
                 items_set = ItemsSet(items=[])
@@ -161,7 +195,8 @@ class OcrEngine:
                 else:
                     ars_amount = (
                         ars_amount
-                        if concept not in getattr(self, "IVA") and entity.upper() == "VISA"
+                        if concept not in getattr(self, "IVA")
+                        and entity.upper() == "VISA"
                         else round(ars_amount * getattr(self, "IVA_VALUE"), 2)
                     )
                     item = Item(
@@ -175,7 +210,7 @@ class OcrEngine:
         )
 
         # Append Taxes Items Set
-        if entity in ["VISA","AMEX"]:
+        if entity in ["VISA", "AMEX"]:
             items_set.type = "taxes"
             self.statement.append_items_set(items_set)
 
@@ -236,18 +271,20 @@ class OcrEngine:
             self.list_splitted_item.remove("*")
 
         if len(receipts) > 0:
-            self.list_splitted_item.remove(receipts[0]) if receipts[
-                0
-            ] in self.list_splitted_item else None
+            (
+                self.list_splitted_item.remove(receipts[0])
+                if receipts[0] in self.list_splitted_item
+                else None
+            )
             return receipts[0].replace("*", "")
 
     def extract_ars_amount(self):
         first_element_zero = False
-        for element in self.list_splitted_item[::-1]:
+        negative = False  # Initialize negative outside the loop
+        print(self.list_splitted_item)
+        for i, element in enumerate(self.list_splitted_item[::-1]):  # Added enumerate to keep track of index
             number = element.strip(" ").replace(".", "").replace(",", ".")
             if self.is_number(number):
-                negative = False
-                self.list_splitted_item.remove(element)
                 if number[-1] == "-":
                     number = number[:-1]
                     negative = True
@@ -255,14 +292,17 @@ class OcrEngine:
                     number = number[1:]
                     negative = True
                 if float(number) == 0:
-                    first_element_zero=True
+                    first_element_zero = True
                     continue
+                # Check if the next element is a "-"
+                if i < len(self.list_splitted_item) and self.list_splitted_item[i+1].strip() == "-":
+                    negative = True
+                self.list_splitted_item.remove(element)
                 return (
-                    round(float(number) * -1, 2)
-                    if negative
-                    else round(float(number), 2)
+                    round(float(number) * -1, 2) if negative else round(float(number), 2)
                 )
         if first_element_zero:
+            self.list_splitted_item.remove(element)
             return 0
 
     def extract_concept(self):
@@ -312,7 +352,7 @@ class OcrEngine:
             > 1
             else False
         )
-    
+
     def extract_statement_dates(self, entity: str, bank: str):
         result = []
         for date_list, keywords in self.STATEMENT_DATES.items():
@@ -321,7 +361,12 @@ class OcrEngine:
                 next_str = self.list_splitted_item[i + 1].strip()
 
                 # Check if the current string ends with ":" and the next string is not empty
-                if entity.upper() in ["VISA","AMEX"] and bank.upper() == "SANTANDER" and current_str.endswith(":") and next_str:
+                if (
+                    entity.upper() in ["VISA", "AMEX"]
+                    and bank.upper() == "SANTANDER"
+                    and current_str.endswith(":")
+                    and next_str
+                ):
                     # Split the current string at the ":" and add both parts to the list
                     current_str, rest_of_current_str = current_str.rsplit(":", 1)
                     self.list_splitted_item[i] = current_str
@@ -332,28 +377,33 @@ class OcrEngine:
                 if any(keyword in combined_str for keyword in keywords):
                     if entity.upper() == "MASTERCARD":
                         date = self.list_splitted_item[i + 2]
+                    elif entity.upper() == "VISA" and bank.upper() == "MACRO BMA":
+                        date = re.sub(r"(\d+)(\D+)(\d+)", r"\1-\2-\3", next_str)
+                        if not bool(re.match(r"^\d+\D+\d+$", date)):
+                            continue
                     else:
-                        date = '-'.join(self.list_splitted_item[i + 2:i + 5])
+                        date = "-".join(self.list_splitted_item[i + 2 : i + 5])
                     result.append((date_list, date))
         return result if result else []
-    
+
     def extract_variables_as_dict(self):
         variables_dict = {
-            'current_closure': None,
-            'current_due_date': None,
-            'next_closure': None,
-            'next_due_date': None
+            "current_closure": None,
+            "current_due_date": None,
+            "next_closure": None,
+            "next_due_date": None,
         }
-
         for key, value in self.statement_dates:
-            if key == 'CURRENT_CLOSURE' and not variables_dict['current_closure']:
-                variables_dict['current_closure'] = OcrEngine.convert_to_datetime(value)
-            elif key == 'NEXT_CLOSURE' and not variables_dict['next_closure']:
-                variables_dict['next_closure'] = OcrEngine.convert_to_datetime(value)
-            elif key == 'CURRENT_DUE_DATE' and not variables_dict['current_due_date']:
-                variables_dict['current_due_date'] = OcrEngine.convert_to_datetime(value)
-            elif key == 'NEXT_DUE_DATE' and not variables_dict['next_due_date']:
-                variables_dict['next_due_date'] = OcrEngine.convert_to_datetime(value)
+            if key == "CURRENT_CLOSURE" and not variables_dict["current_closure"]:
+                variables_dict["current_closure"] = OcrEngine.convert_to_datetime(value)
+            elif key == "NEXT_CLOSURE" and not variables_dict["next_closure"]:
+                variables_dict["next_closure"] = OcrEngine.convert_to_datetime(value)
+            elif key == "CURRENT_DUE_DATE" and not variables_dict["current_due_date"]:
+                variables_dict["current_due_date"] = OcrEngine.convert_to_datetime(
+                    value
+                )
+            elif key == "NEXT_DUE_DATE" and not variables_dict["next_due_date"]:
+                variables_dict["next_due_date"] = OcrEngine.convert_to_datetime(value)
 
         return variables_dict
 
@@ -381,7 +431,7 @@ class OcrEngine:
             elif (
                 len(day_number) >= 2
                 and self.is_number(value=day_number)
-                and int(day_number.strip(",").strip('.')) <= 31
+                and int(day_number.strip(",").strip(".")) <= 31
             ):
                 self.list_splitted_item.remove(self.list_splitted_item[0])
                 return self.replace_day_number_in_formated_date(
@@ -391,45 +441,54 @@ class OcrEngine:
                 return False
         else:
             return self.extract_date()
-        
-    def contains_any_currency(self, concept:str):
+
+    def contains_any_currency(self, concept: str):
         """
         Check if any currency in the list currencies is present in the given concept.
-        
+
         Args:
         - concept (str): The string to search within.
-        
+
         Returns:
         - bool: True if any currency is found, False otherwise.
         """
         return any(currency in concept for currency in self.CURRENCIES)
-    
+
     def extract_dates_visa_santander(self):
-        
-        cadena = ' '.join(self.list_splitted_item)
-        pattern = r'CIERRE (\d{1,2}\s\w{3})\s(\d{2}).*?VENCIMIENTO (\d{1,2}\s\w{3})\s(\d{2})'
+
+        cadena = " ".join(self.list_splitted_item)
+        pattern = (
+            r"CIERRE (\d{1,2}\s\w{3})\s(\d{2}).*?VENCIMIENTO (\d{1,2}\s\w{3})\s(\d{2})"
+        )
 
         matches = re.search(pattern, cadena)
 
         if matches:
-            current_closure_date = f'{matches.group(1)}-{matches.group(2)}'.replace(" ","-")
-            current_due_date = f'{matches.group(3)}-{matches.group(4)}'.replace(" ","-")
-            return [('CURRENT_CLOSURE', current_closure_date), ('CURRENT_DUE_DATE', current_due_date)]
+            current_closure_date = f"{matches.group(1)}-{matches.group(2)}".replace(
+                " ", "-"
+            )
+            current_due_date = f"{matches.group(3)}-{matches.group(4)}".replace(
+                " ", "-"
+            )
+            return [
+                ("CURRENT_CLOSURE", current_closure_date),
+                ("CURRENT_DUE_DATE", current_due_date),
+            ]
         return []
-    
+
     def extract_dates_visa_coinag(self):
-        
-        text = ' '.join(self.list_splitted_item)
-        pattern = r'2000\s+ROSARIO\s+(\d+\s+\w+\s+\d+)'
-        
+
+        text = " ".join(self.list_splitted_item)
+        pattern = r"2000\s+ROSARIO\s+(\d+\s+\w+\s+\d+)"
+
         match = re.search(pattern, text)
-        
+
         if match:
-            current_due_date = match.group(1).replace(" ","-")
-            return [('CURRENT_DUE_DATE', current_due_date)]
+            current_due_date = match.group(1).replace(" ", "-")
+            return [("CURRENT_DUE_DATE", current_due_date)]
         else:
             return []
-    
+
     @staticmethod
     def is_number(value):
         value = value.strip(" ").replace(",", ".")
@@ -468,26 +527,46 @@ class OcrEngine:
             return "-".join(splitted_date[0:3])
         else:
             return False
-    
+
     @staticmethod
     def convert_to_datetime(date_str):
         month_mapping = {
-                'Ene': 1, 'Feb': 2, 'Mar': 3, 'Abr': 4, 'May': 5, 'Jun': 6,
-                'Jul': 7, 'Ago': 8, 'Sep': 9, 'Set': 9, 'Oct': 10, 'Nov': 11, 'Dic': 12,
-                'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6,
-                'Julio': 7, 'Agosto': 8, 'Septiembre': 9, 'Setiembre': 9, 'Octubre': 10, 
-                'Noviembre': 11, 'Diciembre': 12
+            "Ene": 1,
+            "Feb": 2,
+            "Mar": 3,
+            "Abr": 4,
+            "May": 5,
+            "Jun": 6,
+            "Jul": 7,
+            "Ago": 8,
+            "Sep": 9,
+            "Set": 9,
+            "Oct": 10,
+            "Nov": 11,
+            "Dic": 12,
+            "Enero": 1,
+            "Febrero": 2,
+            "Marzo": 3,
+            "Abril": 4,
+            "Mayo": 5,
+            "Junio": 6,
+            "Julio": 7,
+            "Agosto": 8,
+            "Septiembre": 9,
+            "Setiembre": 9,
+            "Octubre": 10,
+            "Noviembre": 11,
+            "Diciembre": 12,
         }
-
-        day, month_str, year = date_str.split('-')
+        day, month_str, year = date_str.split("-")
         month = month_mapping.get(month_str.title())
 
         # Convert two-digit year to four-digit year
         if len(year) == 2:
             if int(year) < 30:
-                year = f'20{year}'
+                year = f"20{year}"
             else:
-                year = f'19{year}'
+                year = f"19{year}"
         try:
             result_date = datetime(int(year), month, int(day))
             return result_date
