@@ -281,7 +281,6 @@ class OcrEngine:
     def extract_ars_amount(self):
         first_element_zero = False
         negative = False  # Initialize negative outside the loop
-        print(self.list_splitted_item)
         for i, element in enumerate(self.list_splitted_item[::-1]):  # Added enumerate to keep track of index
             number = element.strip(" ").replace(".", "").replace(",", ".")
             if self.is_number(number):
